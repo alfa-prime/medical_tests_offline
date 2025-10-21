@@ -1,15 +1,51 @@
 services:
   app:
     build:
-      context: . # Собирать из текущей директории
+      context: .
       dockerfile: Dockerfile
-    container_name: ${DEV_CONTAINER_NAME} # Имя контейнера приложения
+    container_name: ${DEV_CONTAINER_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     ports:
       - "${DEV_PORT}:8000"
     volumes:
-      # Монтируем код приложения для live reload (режим read-write по умолчанию)
       - ./app:/code/app
       - ./logs:/code/logs
     restart: unless-stopped
+    networks:
+      - app_network
+
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: ${DEV_CONTAINER_NAME}_db
+    restart: always
+    environment:
+        - POSTGRES_INITDB_ARGS=--locale=ru_RU.UTF-8
+        - LANG=ru_RU.UTF-8
+        - LC_ALL=ru_RU.UTF-8
+        - TZ=Europe/Moscow
+    env_file:
+        - .env
+    volumes:
+        - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} || exit 1" ]
+        interval: 10s
+        retries: 5
+        start_period: 5s
+
+    networks:
+        - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    name: ${DEV_CONTAINER_NAME}_network
+
