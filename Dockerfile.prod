@@ -1,0 +1,40 @@
+# Этап 1: Builder с созданием venv
+FROM python:3.10 AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /code
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Этап 2: Финальный образ для продакшена
+FROM python:3.10-slim
+
+# Установка локалей
+RUN apt-get update && apt-get install -y --no-install-recommends locales \
+ && sed -i '/ru_RU.UTF-8/s/^# //g' /etc/locale.gen \
+ && locale-gen ru_RU.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=ru_RU.UTF-8 \
+    LC_ALL=ru_RU.UTF-8 \
+    PYTHONIOENCODING=utf-8 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /code
+COPY ./app /code/app
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+EXPOSE 8000
+
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]

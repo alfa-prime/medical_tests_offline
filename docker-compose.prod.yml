@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: ${PROD_CONTAINER_NAME}
+    env_file:
+      - .env
+    ports:
+      - "${PROD_PORT}:8000"
+    volumes:
+      - ./logs:/code/logs
+    restart: always
+
