@@ -47,5 +47,5 @@ volumes:
 
 networks:
   app_network:
-    name: ${DEV_CONTAINER_NAME}_network
+    name: ${DEV_CONTAINER_NAME}_net
 
