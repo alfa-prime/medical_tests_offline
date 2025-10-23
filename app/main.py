@@ -3,9 +3,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core import init_gateway_client, shutdown_gateway_client, global_exception_handler
-from app.route import health_router
+from app.core import init_gateway_client, shutdown_gateway_client, global_exception_handler, get_settings, logger
+from app.route import health_router, collector_router, debug_router
 
+settings =get_settings()
 tags_metadata = []
 
 
@@ -42,3 +43,8 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(collector_router)
+
+if settings.DEBUG_MODE:
+    logger.info("ВКЛЮЧЕН РЕЖИМ ОТКЛАДКИ!")
+    app.include_router(debug_router)

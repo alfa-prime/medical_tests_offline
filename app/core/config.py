@@ -6,7 +6,9 @@ class Settings(BaseSettings):
     GATEWAY_API_KEY: str
     GATEWAY_REQUEST_ENDPOINT: str
 
-    LOGS_LEVEL: str = "INFO"
+    LOGS_LEVEL: str  = "INFO"
+    DEBUG_MODE: bool = True
+    FOLDER_DEBUG: str = "debug"
 
     model_config = SettingsConfigDict(
         env_file=".env",

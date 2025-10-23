@@ -1,5 +1,7 @@
-from .gateway_request import GatewayRequest
+from .model import GatewayRequest, RequestPeriod
+
 
 __all__ = [
     "GatewayRequest",
+    "RequestPeriod"
 ]
