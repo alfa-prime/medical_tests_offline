@@ -1,5 +1,3 @@
-# File: app/service/gateway.py
-
 import httpx
 from fastapi import HTTPException
 

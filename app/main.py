@@ -32,7 +32,7 @@ app = FastAPI(
     version="0.0.1"
 )
 
-app.add_exception_handler(Exception, global_exception_handler)
+# app.add_exception_handler(Exception, global_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,  # noqa

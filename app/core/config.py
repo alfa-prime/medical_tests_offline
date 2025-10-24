@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     GATEWAY_URL: str
     GATEWAY_API_KEY: str
     GATEWAY_REQUEST_ENDPOINT: str
+    REQUEST_TIMEOUT: float
 
     LOGS_LEVEL: str  = "INFO"
     DEBUG_MODE: bool = True
