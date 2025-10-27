@@ -20,7 +20,7 @@ async def init_gateway_client(app: FastAPI):
         base_url=settings.GATEWAY_URL,
         headers={
             "X-API-KEY": settings.GATEWAY_API_KEY,
-            "user-agen": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 YaBrowser/25.6.0.0 Safari/537.36"
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 YaBrowser/25.6.0.0 Safari/537.36"
         },
         timeout=settings.REQUEST_TIMEOUT,
         limits=limits

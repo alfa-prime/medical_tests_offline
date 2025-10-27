@@ -46,5 +46,5 @@ app.include_router(health_router)
 app.include_router(collector_router)
 
 if settings.DEBUG_MODE:
-    logger.info("ВКЛЮЧЕН РЕЖИМ ОТКЛАДКИ!")
+    logger.debug("ВКЛЮЧЕН РЕЖИМ ОТКЛАДКИ!")
     app.include_router(debug_router)

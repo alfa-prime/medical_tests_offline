@@ -11,18 +11,15 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
     Получает результат для ОДНОГО теста.
     Если происходит ошибка, выбрасывает исключение.
     """
-    logger.warning(f"item: {item.keys()}")
-
     test_id = item.get("result_id")
     if not test_id:
         raise ValueError(f"Не найден result_id для элемента: {item.get('service_name')}")
 
     test_result_raw = await fetch_test_result(test_id, gateway_service)
-    _ = item.pop("result_id")
+    item.pop("result_id")
 
     html_content = test_result_raw.get("html")
     if html_content:
-        # Убедимся, что здесь есть await
         item["result"] = await parse_html_test_result(html_content)
     else:
         item["result"] = "Результат пуст"
@@ -37,17 +34,6 @@ async def get_tests_results(src_data: list, gateway_service: GatewayService) -> 
 
     total_records = len(src_data)
     logger.info(f"Начато получение {total_records} результатов.")
-    result = []
-
-    # data = src_data.copy()
-    # for each in data:
-    #     r = await get_single_test_result(each, gateway_service)
-    #     each.update({"result": r})
-    #     if r:
-    #         result.append(each)
-    #
-    #
-    # return result
 
     tasks = [asyncio.create_task(get_single_test_result(item, gateway_service)) for item in src_data]
 

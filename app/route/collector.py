@@ -34,7 +34,7 @@ async def tests_results(
 ) -> List[TestResultResponse]:
     raw_data_all = []
     for section_id, section_data in sections.items():
-        logger.warning(f"собираем данные для {section_id}")
+        logger.info(f"Начинаем сбор данных для '{section_data.prefix}'")
         raw_data = await fetch_period_data(period, section_id, gateway_service)
         raw_data = add_section_prefix(section_data.prefix, raw_data)
         raw_data_all += raw_data
@@ -44,8 +44,8 @@ async def tests_results(
     results = await get_tests_results(sanitize_data, gateway_service)
 
     if DEBUG_MODE:
-        save_json("01. raw_period.json", raw_data_all)
-        save_json("02. sanitize_period.json", sanitize_data)
+        save_json("01. raw.json", raw_data_all)
+        save_json("02. sanitize.json", sanitize_data)
         save_json("03. results.json", results)
 
     return []
