@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Dict, Any, Optional
 from datetime import datetime
-
+from dataclasses import dataclass
 
 class RequestParams(BaseModel):
     c: str = Field(..., description="Класс")
@@ -14,8 +14,8 @@ class GatewayRequest(BaseModel):
 
 
 class RequestPeriod(BaseModel):
-    date_start: str = Field(..., description="Дата начала периода в формате DD.MM.YYYY", examples=["01.01.2025"])
-    date_end: str = Field(..., description="Дата окончания периода в формате DD.MM.YYYY", examples=["17.01.2025"])
+    date_start: str = Field(..., description="Дата начала периода в формате DD.MM.YYYY", examples=["02.01.2025"])
+    date_end: str = Field(..., description="Дата окончания периода в формате DD.MM.YYYY", examples=["02.01.2025"])
     date_range: Optional[str] = Field(None, description="Диапазон дат", examples = [""])
 
 
@@ -38,3 +38,6 @@ class RequestPeriod(BaseModel):
             except ValueError as e:
                 raise ValueError(f"Ошибка в диапазоне дат: {e}")
         return data
+
+
+

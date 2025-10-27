@@ -2,7 +2,7 @@ import inspect
 import json
 from functools import wraps
 from fastapi.responses import JSONResponse
-from fastapi import status
+from fastapi import status, HTTPException
 from pydantic import BaseModel
 from fastapi.encoders import jsonable_encoder
 from app.core.logger_setup import logger
@@ -68,11 +68,21 @@ def route_handle(func):
 
         except Exception as e:
             logger.exception(f"Ошибка в роуте '{func.__name__}': {e}")
+
+            error_text = ""
+            if isinstance(e, HTTPException):
+                # Если это "чистая" ошибка FastAPI, берем ее детальное сообщение
+                error_text = e.detail
+            else:
+                # Для всех остальных "грязных" ошибок берем их общее строковое представление
+                error_text = str(e)
+
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={
                     "success": False,
                     "error": {
+                        "text": error_text,
                         "type": "InternalServerError",
                         "message": "Произошла внутренняя ошибка на сервере. Пожалуйста, попробуйте позже."
                     }

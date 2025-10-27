@@ -33,9 +33,9 @@ class GatewayService:
         except ValueError as exc:
             logger.exception(f"Внутренняя ошибка сервиса: {exc}")
             raise HTTPException(status_code=500, detail=str(exc))
-        except httpx.RequestError as exc:
-            logger.exception(f"Не удалось подключиться к шлюзу: {exc}")
-            raise HTTPException(status_code=503, detail=f"Не удалось подключиться к шлюзу: {exc}")
+        # except httpx.RequestError as exc:
+        #     logger.exception(f"Не удалось подключиться к шлюзу: {exc}")
+        #     raise HTTPException(status_code=503, detail=f"Не удалось подключиться к шлюзу: {exc}")
         except httpx.HTTPStatusError as exc:
             logger.exception(f"Ошибка от шлюза: {exc.response.text}")
             raise HTTPException(status_code=exc.response.status_code, detail=f"Ошибка от шлюза: {exc.response.text}")

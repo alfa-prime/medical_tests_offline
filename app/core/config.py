@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     GATEWAY_API_KEY: str
     GATEWAY_REQUEST_ENDPOINT: str
     REQUEST_TIMEOUT: float
+    REQUEST_PAGINATOR_LIMIT: int
 
     LOGS_LEVEL: str  = "INFO"
     DEBUG_MODE: bool = True

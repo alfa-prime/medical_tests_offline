@@ -1,32 +1,34 @@
 import asyncio
+from fastapi import HTTPException, status
+
 from app.core import logger
 from app.service import GatewayService, fetch_test_result
 from app.service.utils.utils import parse_html_test_result
 
 
-async def get_single_test_result(item: dict, gateway_service: GatewayService):
+async def get_single_test_result(item: dict, gateway_service: GatewayService) -> dict:
     """
-    Безопасно получает результат для одного теста.
-    Возвращает исходный item, дополненный результатом или сообщением об ошибке.
+    Получает результат для ОДНОГО теста.
+    Если происходит ошибка, выбрасывает исключение.
     """
+    logger.warning(f"item: {item.keys()}")
+
     test_id = item.get("result_id")
     if not test_id:
-        logger.warning(f"Не найден result_id для элемента: {item.get('service_name')}")
-        return item
+        raise ValueError(f"Не найден result_id для элемента: {item.get('service_name')}")
 
-    try:
-        test_result_raw = await fetch_test_result(test_id, gateway_service)
-        html_content = test_result_raw.get("html")
-        if html_content:
-            pure_html = await parse_html_test_result(html_content)
-            item["result"] = pure_html
-        else:
-            item["result"] = "Результат пуст"
-        return item
-    except Exception as e:
-        logger.error(f"Не удалось получить результат для test_id {test_id}: {e}")
-        item["result"] = f"Ошибка при получении данных: {e}"
-        return item
+    test_result_raw = await fetch_test_result(test_id, gateway_service)
+    _ = item.pop("result_id")
+
+    html_content = test_result_raw.get("html")
+    if html_content:
+        # Убедимся, что здесь есть await
+        item["result"] = await parse_html_test_result(html_content)
+    else:
+        item["result"] = "Результат пуст"
+
+
+    return item
 
 
 async def get_tests_results(src_data: list, gateway_service: GatewayService) -> list:
@@ -34,24 +36,48 @@ async def get_tests_results(src_data: list, gateway_service: GatewayService) -> 
         return []
 
     total_records = len(src_data)
-    logger.info(f"Начато получение результатов для {total_records} исследований.")
+    logger.info(f"Начато получение {total_records} результатов.")
+    result = []
 
-    tasks = [get_single_test_result(item, gateway_service) for item in src_data]
+    # data = src_data.copy()
+    # for each in data:
+    #     r = await get_single_test_result(each, gateway_service)
+    #     each.update({"result": r})
+    #     if r:
+    #         result.append(each)
+    #
+    #
+    # return result
 
-    processed_count = 0
-    results = []
-    log_interval = max(1, total_records // 10)
+    tasks = [asyncio.create_task(get_single_test_result(item, gateway_service)) for item in src_data]
 
-    # asyncio.as_completed() возвращает задачи по мере их завершения
-    for future in asyncio.as_completed(tasks):
-        # Ожидаем завершения очередной задачи
-        result_item = await future
-        results.append(result_item)
+    try:
+        # Используем gather, так как он проще для логики "Все или ничего".
+        # Он сам отменит все при первой ошибке.
+        results = await asyncio.gather(*tasks)
+        logger.info("Все результаты исследований успешно получены.")
+        return list(results)
 
-        processed_count += 1
-        if processed_count % log_interval == 0 or processed_count == total_records:
-            logger.info(f"Обработано: {processed_count}/{total_records} ({processed_count / total_records:.0%})")
+    except Exception as e:
+        # gather уже отменил остальные задачи, нам не нужно делать это вручную.
+        # Теперь нам нужно просто правильно классифицировать ошибку.
 
-    logger.info("Все результаты исследований получены.")
+        # Логируем исходную ошибку для себя
+        logger.exception(f"Операция сбора данных прервана из-за ошибки: {e}")
 
-    return results
+        # Формируем правильный ответ для клиента
+        if isinstance(e, ValueError):
+            # Это ошибка в данных
+            detail_message = f"Ошибка в данных: {e}"
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        elif isinstance(e, HTTPException):
+            # Это ошибка от шлюза
+            detail_message = "Не удалось получить все результаты: один из запросов к шлюзу не удался."
+            status_code = status.HTTP_502_BAD_GATEWAY
+        else:
+            # Все остальное - наша внутренняя ошибка
+            detail_message = "Произошла непредвиденная внутренняя ошибка при обработке исследований."
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        # И выбрасываем финальную, "чистую" ошибку
+        raise HTTPException(status_code=status_code, detail=detail_message) from e
