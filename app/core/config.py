@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     GATEWAY_URL: str
     GATEWAY_API_KEY: str
@@ -8,7 +9,13 @@ class Settings(BaseSettings):
     REQUEST_TIMEOUT: float
     REQUEST_PAGINATOR_LIMIT: int
 
-    LOGS_LEVEL: str  = "INFO"
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+
+    LOGS_LEVEL: str = "INFO"
     DEBUG_MODE: bool = True
     FOLDER_DEBUG: str = "debug"
 
@@ -19,6 +26,11 @@ class Settings(BaseSettings):
     )
 
 
+    @property
+    def DATABASE_URL(self) -> str: # noqa
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings() # noqa
+    return Settings()  # noqa

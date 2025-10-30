@@ -1,11 +1,13 @@
 import logging
 import sys
-
+from pathlib import Path
 from loguru import logger
 
 
 def configure_logger(log_level: str = "INFO"):
-    """Настраивает loguru для логирования приложения. Вызывается при импорте модуля."""
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
     # Очистка стандартных хендлеров logging
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
@@ -21,22 +23,27 @@ def configure_logger(log_level: str = "INFO"):
         level=log_level,
         colorize=True,
     )
-    logger.add(
-        "logs/app.log",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="INFO",
-        rotation="10 MB",
-        retention="14 days",
-        compression="zip",
-    )
-    logger.add(
-        "logs/errors.log",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-        level="ERROR",
-        rotation="5 MB",
-        retention="10 days",
-        compression="zip",
-    )
+
+    # === Оборачиваем в try-except ===
+    try:
+        logger.add(
+            "logs/app.log",
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+            level="INFO",
+            rotation="10 MB",
+            retention="14 days",
+            compression="zip",
+        )
+        logger.add(
+            "logs/errors.log",
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+            level="ERROR",
+            rotation="5 MB",
+            retention="10 days",
+            compression="zip",
+        )
+    except Exception as e:
+        print(f"Не удалось настроить файловые логи: {e}")
 
     # Перехват логов FastAPI
     class InterceptHandler(logging.Handler):

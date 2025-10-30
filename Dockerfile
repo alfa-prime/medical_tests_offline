@@ -39,6 +39,9 @@ WORKDIR /code
 
 # Копируем код приложения
 COPY ./app /code/app
+# === Копируем alembic и конфиг ===
+COPY ./alembic /code/alembic
+COPY ./alembic.ini /code/alembic.ini
 
 # Указываем PATH на venv, чтобы система знала, где искать uvicorn
 ENV PATH="/opt/venv/bin:$PATH"
