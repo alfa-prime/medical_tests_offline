@@ -14,6 +14,7 @@ from app.core.dependencies import get_session
 from app.model import RequestPeriod, TestResult
 from app.model.response import TestResultResponse
 from app.service import GatewayService, fetch_period_data, sanitize_period_data, save_json, get_tests_results
+from app.service.collector.tools import process_and_save_in_batches
 from app.mapper.section import sections
 
 router = APIRouter(prefix="/dbase", tags=["Work with dbase"], dependencies=[Depends(get_api_key)])
@@ -77,7 +78,6 @@ def add_section_prefix(session_prefix: str, data: list[dict]) -> list[dict]:
     "/collector",
     summary="Собирает данные о результатах тестов за период",
     description="Отправляет запрос на API-шлюз с указанием периода.",
-    response_model=List[TestResultResponse]
 )
 @route_handle
 async def tests_results(
@@ -93,53 +93,31 @@ async def tests_results(
         raw_data = add_section_prefix(section_data.prefix, raw_data)
         raw_data_all += raw_data
 
-    sanitize_data = await sanitize_period_data(raw_data_all)
+    sanitize_data = sanitize_period_data(raw_data_all)
 
     results = await get_tests_results(sanitize_data, gateway_service)
 
-    # --- 2. ЛОГИКА СОХРАНЕНИЯ В БАЗУ ДАННЫХ (новая часть) ---
+    # --- ЛОГИКА СОХРАНЕНИЯ В БАЗУ ДАННЫХ ---
     if not results:
         logger.info("Нет данных для сохранения. Завершение работы.")
         return []
 
-    # 2.1. Преобразуем словари в экземпляры модели для валидации и вставки
+    # Преобразуем словари в экземпляры модели для валидации и вставки
     validated_records = []
     for res_dict in results:
-
-        res_dict['birthday'] = _parse_ru_date(res_dict.get('birthday'))
-        res_dict['service_date'] = _parse_ru_date(res_dict.get('service_date'))
-
         try:
             validated_records.append(TestResult.model_validate(res_dict))
         except ValidationError as e:
             logger.warning(f"Пропуск записи из-за ошибки валидации: {res_dict}. Ошибка: {e}")
             continue
 
-    # 2.2. Выполняем массовую вставку с обработкой конфликтов (UPSERT)
+    # Выполняем массовую вставку с обработкой конфликтов (UPSERT)
     if validated_records:
-        try:
-            # Преобразуем объекты модели обратно в словари для функции insert()
-            insert_dicts = [r.model_dump(exclude_unset=True) for r in validated_records]
-
-            # Создаем инструкцию INSERT ... ON CONFLICT DO NOTHING
-            stmt = insert(TestResult).values(insert_dicts)
-            stmt = stmt.on_conflict_do_nothing(
-                constraint="uq_patient_service"  # Имя уникального ограничения
-            )
-
-            await session.execute(stmt)
-            await session.commit()
-            logger.info(f"Операция сохранения в БД завершена. Обработано {len(insert_dicts)} записей.")
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"Критическая ошибка при сохранении данных в БД: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Database save operation failed.")
-    else:
-        logger.info("После валидации не осталось записей для сохранения в БД.")
+        await process_and_save_in_batches(validated_records, session)
 
     if settings.DEBUG_MODE:
         save_json("01. raw.json", raw_data_all)
         save_json("02. sanitize.json", sanitize_data)
         save_json("03. results.json", results)
 
-    return validated_records
+    return {"status": "ok", "message": f"Processed {len(results)} records."}
