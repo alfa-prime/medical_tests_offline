@@ -1,5 +1,5 @@
 # Makefile for managing Docker-based FastAPI app
-
+.PHONY: up down bash logs clear-volume up-prod down-prod logs-prod bash-prod clean
 # connect .env file
 include .env
 export
@@ -14,6 +14,12 @@ down:
 
 bash:
 	docker exec -it ${DEV_CONTAINER_NAME} bash
+
+logs:
+	docker logs ${DEV_CONTAINER_NAME} -f
+
+clear-volume:
+	docker volume rm ${DEV_CONTAINER_NAME}_postgres_data
 
 # --- Production ---
 up-prod:

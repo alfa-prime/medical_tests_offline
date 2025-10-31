@@ -1,23 +1,41 @@
-from sqlalchemy import Column, String, DateTime, Date, Integer, Text, UniqueConstraint
-from sqlalchemy.sql import func
-from app.core.database import Base
+import datetime
+from typing import Optional
+
+from sqlmodel import Field, SQLModel, func
+from sqlalchemy import Column, DateTime, Text
+from sqlalchemy.schema import UniqueConstraint
 
 
-class TestResult(Base):
-    __tablename__ = "test_results"
+class TestResultBase(SQLModel):
+    prefix: Optional[str] = None
+    last_name: str
+    first_name: str
+    middle_name: str = Field(default="")
+    birthday: datetime.date
+    service_date: datetime.date
+    service_name: str
+    service_code: str
+    result: Optional[str] = Field(default=None, sa_column=Column(Text))
 
-    id = Column(Integer, primary_key=True, index=True)
-    last_name = Column(String, nullable=False)
-    first_name = Column(String, nullable=False)
-    middle_name = Column(String, nullable=False, default="")
-    birthday = Column(Date, nullable=False)
-    service_date = Column(Date, nullable=False)
-    service_name = Column(String, nullable=False)
-    service_code = Column(String, nullable=False)
-    service_prefix = Column(String, nullable=False)
-    result = Column(Text)
-    prefix = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class TestResult(TestResultBase, table=True):
+    __tablename__ = "test_results"  # noqa
+
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    prefix: Optional[str] = None
+    last_name: str
+    first_name: str
+    middle_name: str = Field(default="", nullable=False)
+    birthday: datetime.date
+    service_date: datetime.date
+    service_code: str
+    service_name: str
+    result: Optional[str] = Field(default=None, sa_column=Column(Text))
+
+    created_at: Optional[datetime.datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -30,3 +48,12 @@ class TestResult(Base):
             name='uq_patient_service'
         ),
     )
+
+
+class TestResultCreate(TestResultBase):
+    pass
+
+
+class TestResultRead(TestResultBase):
+    id: int
+    created_at: datetime.datetime

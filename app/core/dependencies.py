@@ -1,11 +1,13 @@
 from typing import Annotated, Optional
-
 import httpx
 from fastapi import Request, Depends, HTTPException, status, Security
 from fastapi.security import APIKeyHeader
+from typing import AsyncGenerator
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.core.database import engine
 from app.service import GatewayService
 from app.core import get_settings
-from app.core.database import AsyncSessionLocal
 
 settings = get_settings()
 
@@ -62,12 +64,6 @@ async def get_api_key(api_key: Optional[str] = Security(api_key_header_scheme)):
     )
 
 
-async def get_db_session():
-    """
-    Создаёт асинхронную сессию для взаимодействия с БД.
-    Используется как зависимость в роутах FastAPI для получения доступа к БД.
-    Yields:
-        AsyncSession: Асинхронная сессия SQLAlchemy.
-    """
-    async with AsyncSessionLocal() as session:
+async def get_session() -> AsyncGenerator:
+    async with AsyncSession(engine) as session:
         yield session

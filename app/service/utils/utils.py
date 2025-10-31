@@ -3,10 +3,18 @@ import re
 from pathlib import Path
 import htmlmin
 from bs4 import BeautifulSoup
-
+from datetime import date, datetime
 from app.core import get_settings
 
 settings = get_settings()
+
+def json_serial_date(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat() # Преобразуем дату в строку формата 'YYYY-MM-DD'
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
 
 def save_json(filename: str, data: list | dict):
     debug_folder = Path(settings.FOLDER_DEBUG)
@@ -14,7 +22,7 @@ def save_json(filename: str, data: list | dict):
     file_path = debug_folder / filename
 
     with open(file_path, "w", encoding='utf-8') as file:
-        json.dump(data, file, indent=2, ensure_ascii=False) # noqa
+        json.dump(data, file, indent=2, ensure_ascii=False, default=json_serial_date) # noqa
 
 
 

@@ -24,19 +24,20 @@ services:
       context: .
       dockerfile: Dockerfile.postgres
     container_name: ${DEV_CONTAINER_NAME}_db
+    ports:
+      - "5433:5432"
     restart: always
     environment:
         - POSTGRES_INITDB_ARGS=--locale=ru_RU.UTF-8
         - LANG=ru_RU.UTF-8
         - LC_ALL=ru_RU.UTF-8
         - TZ=Europe/Moscow
-        - POSTGRES_DB=tests_db
     env_file:
         - .env
     volumes:
         - postgres_data:/var/lib/postgresql/data
     healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} || exit 1" ]
+        test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgresьфлу ифыр} || exit 1" ]
         interval: 10s
         retries: 5
         start_period: 5s
@@ -46,6 +47,7 @@ services:
 
 volumes:
   postgres_data:
+    name: ${DEV_CONTAINER_NAME}_postgres_data
 
 networks:
   app_network:

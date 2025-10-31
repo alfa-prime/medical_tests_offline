@@ -8,6 +8,7 @@ async def sanitize_period_data(data: list) -> list:
         result_id = each.get("EvnXml_id", "")
         if result_id:
             record = {
+                "prefix": each["prefix"],
                 "last_name": each["Person_Surname"].capitalize(),
                 "first_name": each["Person_Firname"].capitalize(),
                 "middle_name": each["Person_Secname"].capitalize() if each["Person_Secname"] else "",
@@ -15,7 +16,6 @@ async def sanitize_period_data(data: list) -> list:
                 "service_date": each["EvnUslugaPar_setDate"],
                 "service_name": each["Usluga_Name"],
                 "service_code": each["Usluga_Code"],
-                "service_prefix": each["prefix"],
                 "result_id": each["EvnXml_id"],
             }
             response.append(record)
