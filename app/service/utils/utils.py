@@ -5,15 +5,27 @@ import htmlmin
 from bs4 import BeautifulSoup
 from datetime import date, datetime
 from app.core import get_settings
+import datetime
 
 settings = get_settings()
+
+
+def date_generator(year: int, month: int):
+    """Создает генератор, который выдает по одному дню из заданного месяца и года"""
+    if month == 12:
+        next_month_date = datetime.date(year + 1, 1, 1)
+    else:
+        next_month_date = datetime.date(year, month + 1, 1)
+    last_day_of_month = (next_month_date - datetime.timedelta(days=1)).day
+    for day in range(1, last_day_of_month + 1):
+        yield datetime.date(year, month, day)
+
 
 def json_serial_date(obj):
     """JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, (datetime, date)):
-        return obj.isoformat() # Преобразуем дату в строку формата 'YYYY-MM-DD'
+        return obj.isoformat()  # Преобразуем дату в строку формата 'YYYY-MM-DD'
     raise TypeError(f"Type {type(obj)} not serializable")
-
 
 
 def save_json(filename: str, data: list | dict):
@@ -22,8 +34,7 @@ def save_json(filename: str, data: list | dict):
     file_path = debug_folder / filename
 
     with open(file_path, "w", encoding='utf-8') as file:
-        json.dump(data, file, indent=2, ensure_ascii=False, default=json_serial_date) # noqa
-
+        json.dump(data, file, indent=2, ensure_ascii=False, default=json_serial_date)  # noqa
 
 
 async def parse_html_test_result(html_raw: str) -> str:

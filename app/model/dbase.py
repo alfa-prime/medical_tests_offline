@@ -4,7 +4,7 @@ from typing import Optional
 from sqlmodel import Field, SQLModel, func
 from sqlalchemy import Column, DateTime, Text
 from sqlalchemy.schema import UniqueConstraint
-
+from sqlalchemy import Index, text
 
 class TestResultBase(SQLModel):
     prefix: Optional[str] = None
@@ -31,6 +31,7 @@ class TestResult(TestResultBase, table=True):
     service_code: str
     service_name: str
     result: Optional[str] = Field(default=None, sa_column=Column(Text))
+    result_hash: str | None = Field(default=None, index=True)
 
     created_at: Optional[datetime.datetime] = Field(
         default=None,
@@ -45,7 +46,8 @@ class TestResult(TestResultBase, table=True):
             'birthday',
             'service_date',
             'service_code',
-            name='uq_patient_service'
+            'result_hash',
+            name='uq_patient_service_hash'
         ),
     )
 

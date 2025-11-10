@@ -14,11 +14,12 @@ def _sanitize_date(date_str: Optional[str]) -> Optional[datetime.date]:
         return None
 
 
-def sanitize_period_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def sanitize_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     response = []
     logger.info("Очистка и подготовка данных для дальнейшей обработки")
     for each in data:
-        result_id = each.get("EvnXml_id", "")
+        # отфильтровываем записи без результатов исследований
+        result_id = each.get("EvnXml_id", None)
         if result_id:
             record = {
                 "prefix": each["prefix"],
@@ -29,7 +30,7 @@ def sanitize_period_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "service_date": _sanitize_date(each["EvnUslugaPar_setDate"]),
                 "service_name": each["Usluga_Name"],
                 "service_code": each["Usluga_Code"],
-                "result_id": each["EvnXml_id"],
+                "result_id": result_id,
             }
             response.append(record)
     logger.info("Получение результатов исследований")

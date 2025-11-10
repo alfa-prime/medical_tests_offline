@@ -1,4 +1,4 @@
-from .model import GatewayRequest, RequestPeriod
+from .route import GatewayRequest, RequestPeriod, RequestByMonth, RequestByDay
 from .dbase import TestResult, TestResultCreate, TestResultRead
 
 __all__ = [
@@ -6,5 +6,7 @@ __all__ = [
     "RequestPeriod",
     "TestResult",
     "TestResultCreate",
-    "TestResultRead"
+    "TestResultRead",
+    "RequestByMonth",
+    "RequestByDay"
 ]

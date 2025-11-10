@@ -1,15 +1,13 @@
 from app.core import logger, get_settings
-from app.model import RequestPeriod
 from app.service import GatewayService
 
 settings = get_settings()
 
 async def fetch_period_data(
-        dates: RequestPeriod,
-        section_id: str,
+        period: str,
+        department_id: str,
         gateway_service: GatewayService
 ) -> list:
-    # Получает список исследований за период
     paginator_limit = settings.REQUEST_PAGINATOR_LIMIT
     all_records = []
     start = 0
@@ -23,14 +21,14 @@ async def fetch_period_data(
             "data": {
                 "PersonPeriodicType_id": 1,
                 "SearchFormType": "EvnUslugaPar",
-                "EvnUslugaPar_setDate_Range": dates.date_range,
+                "EvnUslugaPar_setDate_Range": period,
                 "SearchType_id": 1,
                 "Part_of_the_study": "false",
                 "PersonCardStateType_id": 1,
                 "PrivilegeStateType_id": 1,
                 "limit": paginator_limit,
                 "start": start,
-                "LpuSection_uid": section_id
+                "LpuSection_uid": department_id
             }
         }
 

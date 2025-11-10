@@ -7,9 +7,19 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.database import engine
 from app.service import GatewayService
-from app.core import get_settings
+from app.core.config import get_settings, Settings
 
-settings = get_settings()
+
+async def check_permission(settings: Annotated[Settings, Depends(get_settings)]):
+    """
+    Dependency, которая проверяет, разрешено ли использовать этот роут.
+    Если нет, выбрасывает ошибку 404, чтобы скрыть его существование.
+    """
+    if not settings.ALLOW_DB_CLEAR_ENDPOINT:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This endpoint is not available."
+        )
 
 
 def get_base_http_client(request: Request) -> httpx.AsyncClient:
@@ -40,12 +50,16 @@ async def get_gateway_service(
 api_key_header_scheme = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 
-async def get_api_key(api_key: Optional[str] = Security(api_key_header_scheme)):
+async def get_api_key(
+        settings: Annotated[Settings, Depends(get_settings)],
+        api_key: Optional[str] = Security(api_key_header_scheme),
+):
     """
     Проверяет наличие и валидность X-API-KEY в заголовках запроса.
     Если ключ отсутствует или не совпадает с ожидаемым, выбрасывает HTTPException.
     Args:
         api_key (Optional[str]): Значение заголовка X-API-KEY.
+        settings: настройки приложения
     Raises:
         HTTPException: Если ключ отсутствует или невалиден (403).
     Returns:

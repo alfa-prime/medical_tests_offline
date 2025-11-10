@@ -1,67 +1,76 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import ValidationError
-from sqlalchemy.dialects.postgresql import insert
-from fastapi import HTTPException
-
 from app.model import TestResult
 from app.core import logger
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException
 
 
 async def process_and_save_in_batches(
-        results: list,
+        validated_records: list[TestResult],
         session: AsyncSession,
         batch_size: int = 1000
-):
-    total_processed = 0
-    total_newly_saved = 0  # Переименовали для ясности
+)-> dict[str, any]:
+    """
+    Принимает список ВАЛИДИРОВАННЫХ моделей TestResult и сохраняет их в БД пакетами,
+    пропуская дубликаты на основе уникального индекса 'uq_patient_service'.
+    """
+    if not validated_records:
+        return {"inserted": 0, "skipped": []}
 
-    for i in range(0, len(results), batch_size):
-        batch_dicts = results[i:i + batch_size]
+    total_inserted = 0
+    all_skipped_records = []
+    total_to_insert = len(validated_records)
+    logger.info(f"Начало сохранения {total_to_insert} записей в БД пакетами по {batch_size}.")
 
-        validated_records = []
-        for res_dict in batch_dicts:
-            try:
-                validated_records.append(TestResult.model_validate(res_dict))
-            except ValidationError as e:
-                logger.warning(f"Пропуск записи из-за ошибки валидации: {res_dict}. Ошибка: {e}")
-                continue
+    for i in range(0, total_to_insert, batch_size):
+        batch = validated_records[i:i + batch_size]
 
-        if not validated_records:
+        key_to_record_map = {
+            (rec.last_name, rec.first_name, rec.middle_name, rec.birthday, rec.service_date, rec.service_code,
+             rec.result_hash): rec
+            for rec in batch
+        }
+        attempted_keys = set(key_to_record_map.keys())
+
+        # Преобразуем экземпляры моделей в словари прямо перед вставкой
+        records_to_insert = [rec.model_dump(exclude={'id', 'created_at'}) for rec in batch]
+
+        if not records_to_insert:
             continue
 
         try:
-            insert_dicts = [r.model_dump(exclude={'id', 'created_at'}) for r in validated_records]
+            stmt = insert(TestResult).values(records_to_insert)
 
-            stmt = insert(TestResult).values(insert_dicts)
+            # Правильно ссылаемся на уникальный ИНДЕКС через index_elements
             stmt = stmt.on_conflict_do_nothing(
-                constraint="uq_patient_service"
+                constraint='uq_patient_service_hash'
             )
 
-            # Добавляем RETURNING id, чтобы запрос вернул ID вставленных строк
-            stmt = stmt.returning(TestResult.id)
+            stmt = stmt.returning(
+                TestResult.last_name, TestResult.first_name, TestResult.middle_name,
+                TestResult.birthday, TestResult.service_date, TestResult.service_code,
+                TestResult.result_hash
+            )
 
             result_proxy = await session.execute(stmt)
+            inserted_rows = result_proxy.all()
+            total_inserted += len(inserted_rows)
 
-            # Считаем, сколько строк нам вернулось
-            inserted_count = len(result_proxy.all())
+            inserted_keys = {tuple(row) for row in inserted_rows}
+            skipped_keys = attempted_keys - inserted_keys # noqa
 
-            total_processed += len(batch_dicts)
-            total_newly_saved += inserted_count
+            if skipped_keys:
+                batch_skipped = [key_to_record_map[key] for key in skipped_keys]
+                all_skipped_records.extend(batch_skipped)
 
             logger.info(
-                f"Обработан пакет {i // batch_size + 1}. "
-                f"Обработано записей: {total_processed}/{len(results)}. "
-                f"Сохранено новых: {total_newly_saved}"
-            )
+                f"Обработан пакет {i // batch_size + 1}. Попытка: {len(batch)}. Вставлено новых: {len(inserted_rows)}.")
 
-        except Exception as e:
+        except (IntegrityError, Exception) as e:
+            # Откатываем транзакцию в случае любой ошибки в любом из пакетов
             await session.rollback()
             logger.error(f"Критическая ошибка при сохранении пакета: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail="Database save operation failed on a batch.")
+            raise HTTPException(status_code=500, detail="Ошибка при пакетной записи в БД.")
 
-    await session.commit()
-    logger.info(
-        f"Операция сохранения в БД завершена. "
-        f"Всего обработано: {total_processed}. "
-        f"Всего сохранено новых: {total_newly_saved}."
-    )
+    return {"inserted": total_inserted, "skipped": all_skipped_records}
