@@ -157,3 +157,6 @@ async def collect_by_month(year: int, month: int, gateway_service: GatewayServic
         if isinstance(e, HTTPException):
             raise
         raise HTTPException(status_code=500, detail="Произошла непредвиденная ошибка на сервере.")
+
+
+

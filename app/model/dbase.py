@@ -4,7 +4,8 @@ from typing import Optional
 from sqlmodel import Field, SQLModel, func
 from sqlalchemy import Column, DateTime, Text
 from sqlalchemy.schema import UniqueConstraint
-from sqlalchemy import Index, text
+from app.core.encryption import EncryptedString
+
 
 class TestResultBase(SQLModel):
     prefix: Optional[str] = None
@@ -22,15 +23,15 @@ class TestResult(TestResultBase, table=True):
     __tablename__ = "test_results"  # noqa
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    prefix: Optional[str] = None
+    prefix: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     last_name: str
     first_name: str
     middle_name: str = Field(default="", nullable=False)
     birthday: datetime.date
     service_date: datetime.date
-    service_code: str
-    service_name: str
-    result: Optional[str] = Field(default=None, sa_column=Column(Text))
+    service_code: str = Field(sa_column=Column(EncryptedString, nullable=False))
+    service_name: str = Field(sa_column=Column(EncryptedString, nullable=False))
+    result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     result_hash: str | None = Field(default=None, index=True)
 
     created_at: Optional[datetime.datetime] = Field(

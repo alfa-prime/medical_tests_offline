@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from loguru import logger
 
+from .config import get_settings
+
 
 def configure_logger(log_level: str = "INFO"):
     log_dir = Path("logs")
@@ -24,7 +26,6 @@ def configure_logger(log_level: str = "INFO"):
         colorize=True,
     )
 
-    # === Оборачиваем в try-except ===
     try:
         logger.add(
             "logs/app.log",
@@ -54,8 +55,6 @@ def configure_logger(log_level: str = "INFO"):
     for name in logging.root.manager.loggerDict:
         logging.getLogger(name).handlers = [InterceptHandler()]
 
-
-from .config import get_settings
 
 settings = get_settings()
 configure_logger(settings.LOGS_LEVEL)

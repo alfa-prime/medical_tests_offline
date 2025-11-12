@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from fastapi import HTTPException, status
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception
 
@@ -10,14 +11,24 @@ from app.service.utils.utils import parse_html_test_result
 
 def is_retryable_exception(exception) -> bool:
     """Возвращает True, если исключение - это ошибка, которую стоит повторить."""
-    # Мы повторяем только HTTPException со статусами 5xx (серверные ошибки шлюза)
-    return isinstance(exception, HTTPException) and 500 <= exception.status_code < 600
+    if isinstance(exception, (
+            httpx.ReadError,
+            httpx.ConnectError,
+            httpx.ReadTimeout,
+            httpx.ConnectTimeout,
+            httpx.WriteTimeout
+    )):
+        return True
+
+    if isinstance(exception, HTTPException) and 500 <= exception.status_code < 600:
+        return True
+    return False
 
 
 @retry(
     stop=stop_after_attempt(5),  # Остановиться после 5 попыток (1 первая + 4 повторных)
     wait=wait_fixed(2),  # Ждать 2 секунды между попытками
-    retry=retry_if_exception(is_retryable_exception), # Повторять только если ошибка - HTTPException # noqa
+    retry=retry_if_exception(is_retryable_exception), # noqa
     before_sleep=lambda retry_state: logger.warning(
         f"Повторная попытка {retry_state.attempt_number}/5 для запроса "
         f"из-за ошибки: {retry_state.outcome.exception()}"

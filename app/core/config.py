@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     DEBUG_MODE: bool = True
     FOLDER_DEBUG: str = "debug"
 
+    ENCRYPTION_KEY: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

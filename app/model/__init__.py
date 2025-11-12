@@ -1,5 +1,6 @@
-from .route import GatewayRequest, RequestPeriod, RequestByMonth, RequestByDay
+from .route import GatewayRequest, RequestPeriod, RequestByMonth, RequestByDay, RequestByPatient
 from .dbase import TestResult, TestResultCreate, TestResultRead
+from .response import TestResultResponse
 
 __all__ = [
     "GatewayRequest",
@@ -8,5 +9,7 @@ __all__ = [
     "TestResultCreate",
     "TestResultRead",
     "RequestByMonth",
-    "RequestByDay"
+    "RequestByDay",
+    "RequestByPatient",
+    "TestResultResponse"
 ]

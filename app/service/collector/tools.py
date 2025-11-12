@@ -40,20 +40,20 @@ async def process_and_save_in_batches(
             continue
 
         try:
-            stmt = insert(TestResult).values(records_to_insert)
+            statement = insert(TestResult).values(records_to_insert)
 
             # Правильно ссылаемся на уникальный ИНДЕКС через index_elements
-            stmt = stmt.on_conflict_do_nothing(
+            statement = statement.on_conflict_do_nothing(
                 constraint='uq_patient_service_hash'
             )
 
-            stmt = stmt.returning(
+            statement = statement.returning(
                 TestResult.last_name, TestResult.first_name, TestResult.middle_name,
                 TestResult.birthday, TestResult.service_date, TestResult.service_code,
                 TestResult.result_hash
             )
 
-            result_proxy = await session.execute(stmt)
+            result_proxy = await session.execute(statement)
             inserted_rows = result_proxy.all()
             total_inserted += len(inserted_rows)
 

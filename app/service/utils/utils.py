@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 import htmlmin
 from bs4 import BeautifulSoup
-from datetime import date, datetime
+from datetime import date
 from app.core import get_settings
 import datetime
 

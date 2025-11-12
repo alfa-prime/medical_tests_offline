@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import init_gateway_client, shutdown_gateway_client, global_exception_handler, get_settings, logger
-from app.route import health_router, collector_router, debug_router
+from app.route import health_router, collector_router, debug_router, service_router
 
 settings =get_settings()
 tags_metadata = []
@@ -33,7 +33,7 @@ app = FastAPI(
     version="0.0.1"
 )
 
-# app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,  # noqa
@@ -45,6 +45,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(collector_router)
+app.include_router(service_router)
 
 if settings.DEBUG_MODE:
     logger.debug("ВКЛЮЧЕН РЕЖИМ ОТКЛАДКИ!")
