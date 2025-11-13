@@ -9,8 +9,8 @@ from alembic import context
 from app.core.config import get_settings
 from app.model import TestResult  # <-- Добавь все модели
 
-settings = get_settings()
 
+settings = get_settings()
 
 DATABASE_URL = settings.DATABASE_URL
 
