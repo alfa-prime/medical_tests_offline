@@ -31,10 +31,6 @@ class TestResult(TestResultBase, table=True):
     service_date: datetime.date
     service_code: str
     service_name: str
-    # ВНИМАНИЕ: После миграции тип этой колонки вручную заменяется
-    # на EncryptedString внутри контейнера. См. инструкцию по развертыванию.
-    # Это сделано, т.к. Alembic не поддерживает автогенерацию для этого типа.
-    # result: Optional[str]
     result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     result_hash: str | None = Field(default=None, index=True)
 
