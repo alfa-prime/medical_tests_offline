@@ -4,11 +4,50 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     container_name: ${PROD_CONTAINER_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     ports:
       - "${PROD_PORT}:8000"
     volumes:
+      - ./app:/code/app
       - ./logs:/code/logs
+      - ./debug:/code/materials
+    restart: unless-stopped
+    networks:
+      - app_network
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: ${PROD_CONTAINER_NAME}_db
+    ports:
+      - "5433:5432"
     restart: always
+    environment:
+      - POSTGRES_INITDB_ARGS=--locale=ru_RU.UTF-8
+      - LANG=ru_RU.UTF-8
+      - LC_ALL=ru_RU.UTF-8
+      - TZ=Europe/Moscow
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} || exit 1" ]
+      interval: 10s
+      retries: 5
+      start_period: 5s
 
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+    name: ${PROD_CONTAINER_NAME}_postgres_data
+
+networks:
+  app_network:
+    name: ${PROD_CONTAINER_NAME}_net

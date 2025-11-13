@@ -31,8 +31,8 @@ class TestResult(TestResultBase, table=True):
     service_date: datetime.date
     service_code: str
     service_name: str
-    result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
-    # result: Optional[str]
+    # result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
+    result: Optional[str]
     result_hash: str | None = Field(default=None, index=True)
 
     created_at: Optional[datetime.datetime] = Field(
