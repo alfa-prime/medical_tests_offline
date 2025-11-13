@@ -13,23 +13,25 @@ class TestResultBase(SQLModel):
     first_name: str
     middle_name: str = Field(default="")
     birthday: datetime.date
+    test_date: datetime.date
     service: str
     analyzer_name: str
-    test_date: datetime.date
     test_code: str
     test_name: str
     test_result: Optional[str] = Field(default=None, sa_column=Column(Text))
 
 
+
 class TestResult(TestResultBase, table=True):
     __tablename__ = "test_results"  # noqa
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    test_result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     result_hash: str | None = Field(default=None, index=True)
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
     created_at: Optional[datetime.datetime] = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     )
-    test_result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
+
 
     __table_args__ = (
         # Уникальный индекс для отсеивания дублей
