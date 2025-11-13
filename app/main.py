@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
     await shutdown_gateway_client(app)
 
 
+
 app = FastAPI(
     tags=tags_metadata,
     title="E2S(mt): Шлюз Самсон <-> ЕВМИАС {dbase version}",
