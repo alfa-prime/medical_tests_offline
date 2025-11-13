@@ -15,7 +15,7 @@ class TestResultBase(SQLModel):
     birthday: datetime.date
     test_date: datetime.date
     service: str
-    analyzer_name: str
+    analyzer_name: Optional[str] = None
     test_code: str
     test_name: str
     test_result: Optional[str] = Field(default=None, sa_column=Column(Text))
