@@ -20,7 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM python:3.10-slim
 
 # Установка локалей
-RUN apt-get update && apt-get install -y --no-install-recommends locales \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+ locales \
+ postgresql-client \
  && sed -i '/ru_RU.UTF-8/s/^# //g' /etc/locale.gen \
  && locale-gen ru_RU.UTF-8 \
  && rm -rf /var/lib/apt/lists/*

@@ -11,7 +11,7 @@ router = APIRouter(prefix="/debug", tags=["Test requests for debug"], dependenci
 
 
 @router.post(
-    "/test_result/{result_id}",
+    path="/test_result/{result_id}",
     summary="Собирает данные о результатах тестов за период",
     description="Отправляет запрос на API-шлюз с указанием периода."
 )
@@ -25,3 +25,6 @@ async def get_test_result(
         save_json("44. test_result_raw.json", result)
 
     return result
+
+
+
