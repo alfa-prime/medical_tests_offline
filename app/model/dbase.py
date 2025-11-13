@@ -24,6 +24,8 @@ class TestResultBase(SQLModel):
 
 class TestResult(TestResultBase, table=True):
     __tablename__ = "test_results"  # noqa
+    test_code: str = Field(sa_column=Column(EncryptedString))
+    test_name: str = Field(sa_column=Column(EncryptedString))
     test_result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     result_hash: str | None = Field(default=None, index=True)
     id: Optional[int] = Field(default=None, primary_key=True, index=True)

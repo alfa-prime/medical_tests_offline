@@ -8,10 +8,10 @@ class TestResultResponse(BaseModel):
     first_name: str
     middle_name: str
     birthday: date
-    service_date: date
-    service_code: str
-    service_name: str
-    result: Optional[str] = None
+    test_date: date
+    test_code: str
+    test_name: str
+    test_result: Optional[str] = None
 
 
 
