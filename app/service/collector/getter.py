@@ -16,7 +16,8 @@ def is_retryable_exception(exception) -> bool:
             httpx.ConnectError,
             httpx.ReadTimeout,
             httpx.ConnectTimeout,
-            httpx.WriteTimeout
+            httpx.WriteTimeout,
+            httpx.RemoteProtocolError,
     )):
         return True
 
