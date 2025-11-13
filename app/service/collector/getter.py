@@ -48,9 +48,9 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
 
     html_content = test_result_raw.get("html")
     if html_content:
-        item["result"] = await parse_html_test_result(html_content)
+        item["test_result"] = await parse_html_test_result(html_content)
     else:
-        item["result"] = "Результат пуст"
+        item["test_result"] = "Результат пуст"
 
     return item
 

@@ -27,9 +27,11 @@ def sanitize_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "first_name": each["Person_Firname"].capitalize(),
                 "middle_name": each["Person_Secname"].capitalize() if each["Person_Secname"] else "",
                 "birthday": _sanitize_date(each["Person_Birthday"]),
-                "service_date": _sanitize_date(each["EvnUslugaPar_setDate"]),
-                "service_name": each["Usluga_Name"],
-                "service_code": each["Usluga_Code"],
+                "service": each["MedService_Name"],
+                "analyzer_name": each["Resource_Name"],
+                "test_date": _sanitize_date(each["EvnUslugaPar_setDate"]),
+                "test_name": each["Usluga_Name"],
+                "test_code": each["Usluga_Code"],
                 "result_id": result_id,
             }
             response.append(record)

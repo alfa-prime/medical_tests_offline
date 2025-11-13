@@ -25,7 +25,7 @@ def _add_result_hash(data: list[dict]):
     (так как postgres не справляется с объемом поля results при построении индекса)
     """
     for each in data:
-        result_text = each.get("result")
+        result_text = each.get("test_result")
         each["result_hash"] = hashlib.md5(result_text.encode('utf-8')).hexdigest()
     return data
 
