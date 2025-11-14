@@ -23,6 +23,7 @@ def sanitize_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if result_id:
             record = {
                 "prefix": each["prefix"],
+                "service_id": each["EvnUslugaPar_id"],
                 "last_name": each["Person_Surname"].capitalize(),
                 "first_name": each["Person_Firname"].capitalize(),
                 "middle_name": each["Person_Secname"].capitalize() if each["Person_Secname"] else "",

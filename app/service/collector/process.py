@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-import hashlib
 
 from app.model import TestResult
 from app.service import GatewayService, fetch_period_data, sanitize_data, get_tests_results
@@ -15,18 +14,6 @@ def _add_prefix(session_prefix: str, data: list[dict]) -> list[dict]:
     """Добавляет к записи префикс отделения"""
     for each in data:
         each.update({"prefix": session_prefix})
-    return data
-
-
-def _add_result_hash(data: list[dict]):
-    """
-    Добавляет md5-хэш для поля results, это нужно для построения уникального индекса,
-    при вставке данных БД для избежания дубликатов
-    (так как postgres не справляется с объемом поля results при построении индекса)
-    """
-    for each in data:
-        result_text = each.get("test_result")
-        each["result_hash"] = hashlib.md5(result_text.encode('utf-8')).hexdigest()
     return data
 
 
@@ -82,8 +69,7 @@ async def _collect_and_process_data(
                 data_prefix = _add_prefix(department.prefix, data_raw)
                 data_sanitized = sanitize_data(data_prefix)
                 data_with_test_results = await get_tests_results(data_sanitized, gateway_service)
-                data_with_result_hash = _add_result_hash(data_with_test_results)
-                gateway_response.extend(data_with_result_hash)
+                gateway_response.extend(data_with_test_results)
 
     if not gateway_response:
         logger.info("Нет данных для сохранения по указанным периодам. Завершение работы.")
@@ -111,7 +97,7 @@ async def _collect_and_process_data(
         for rec in skipped_records:
             rec_dict = rec.model_dump(mode='json')
             # Убираем ненужные поля
-            for key in ['prefix', 'id', 'result_hash', 'result', 'created_at']:
+            for key in ['prefix', 'id', 'test_result', 'created_at']:
                 rec_dict.pop(key, None)
             records_for_json.append(rec_dict)
 

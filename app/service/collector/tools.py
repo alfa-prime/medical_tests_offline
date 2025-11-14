@@ -27,8 +27,8 @@ async def process_and_save_in_batches(
         batch = validated_records[i:i + batch_size]
 
         key_to_record_map = {
-            (rec.last_name, rec.first_name, rec.middle_name, rec.birthday, rec.test_date, rec.test_code,
-             rec.result_hash): rec
+            (rec.service_id, rec.last_name, rec.first_name, rec.middle_name, rec.birthday, rec.test_date,
+             rec.test_code): rec
             for rec in batch
         }
         attempted_keys = set(key_to_record_map.keys())
@@ -48,9 +48,8 @@ async def process_and_save_in_batches(
             )
 
             statement = statement.returning(
-                TestResult.last_name, TestResult.first_name, TestResult.middle_name,
-                TestResult.birthday, TestResult.test_date, TestResult.test_code,
-                TestResult.result_hash
+                TestResult.service_id, TestResult.last_name, TestResult.first_name, TestResult.middle_name,
+                TestResult.birthday, TestResult.test_date, TestResult.test_code
             )
 
             result_proxy = await session.execute(statement)
