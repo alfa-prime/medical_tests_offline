@@ -9,6 +9,7 @@ from app.core.encryption import EncryptedString
 
 class TestResultBase(SQLModel):
     prefix: Optional[str] = None
+    service_id: str # внутренний id услуги в ЕВМИАС
     last_name: str
     first_name: str
     middle_name: str = Field(default="")
@@ -24,7 +25,7 @@ class TestResultBase(SQLModel):
 
 class TestResult(TestResultBase, table=True):
     __tablename__ = "test_results"  # noqa
-    test_code: str = Field(sa_column=Column(EncryptedString))
+    test_code: str
     test_name: str = Field(sa_column=Column(EncryptedString))
     test_result: Optional[str] = Field(default=None, sa_column=Column(EncryptedString))
     result_hash: str | None = Field(default=None, index=True)
