@@ -17,7 +17,7 @@ router = APIRouter(prefix="/dbase", tags=["Work with dbase"], dependencies=[Depe
     "/find_by_patient",
     summary="Найти все исследования по данным пациента",
     description="Выполняет поиск по ФИО и дате рождения. Возвращает список всех найденных исследований.",
-    response_model=list[TestResultResponse]
+    # response_model=list[TestResultResponse]
 )
 @route_handle
 async def find_by_patient(

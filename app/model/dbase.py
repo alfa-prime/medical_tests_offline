@@ -42,7 +42,6 @@ class TestResult(TestResultBase, table=True):
             'birthday',
             'test_date',
             'test_code',
-            # 'result_hash',
             name='uq_patient_service_hash'
         ),
         # Композитный индекс для ускорения поиска

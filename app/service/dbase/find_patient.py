@@ -1,9 +1,57 @@
+import json
+import datetime
 from typing import Sequence
+from collections import defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.model import TestResult, RequestByPatient
 from app.core.logger_setup import logger
+
+CATEGORY_MAP = {
+    "tests": "medtests",
+    "ultra_sound": "ultrasound_scan",
+    "x-ray": "x_ray",
+    "functional": "functional_tests"
+}
+
+
+def _calculate_age(birth_date: datetime.date) -> int:
+    """Вычисляет возраст на основе даты рождения."""
+    today = datetime.date.today()
+    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    return age
+
+
+def _process_category_data(tests: Sequence['TestResult']) -> dict[str, any]:
+    """Обрабатывает список тестов для одной категории."""
+    if not tests:
+        return {
+            "tests_total": 0,
+            "tests_dates": [],
+            "tests_dates_latest": None,
+            "tests_with_results": {}
+        }
+
+    tests_by_date = defaultdict(list)
+    for test in tests:
+        test_info = {
+            "service": test.service,
+            "analyzer_name": test.analyzer_name,
+            "test_code": test.test_code,
+            "test_name": test.test_name,
+            "test_result": test.test_result,
+        }
+        tests_by_date[test.test_date.isoformat()].append(test_info)
+
+    sorted_dates = sorted(tests_by_date.keys(), reverse=True)
+
+    return {
+        "tests_total": len(tests),
+        "tests_dates": sorted_dates,
+        "tests_dates_latest": sorted_dates[0] if sorted_dates else None,
+        "tests_with_results": dict(tests_by_date)
+    }
 
 
 async def find_records_by_patient(
@@ -33,6 +81,39 @@ async def find_records_by_patient(
     results = await session.exec(statement)
     found_records = results.all()
 
+    if not found_records:
+        return {"success": True, "result": {}}
+
+    # Извлекаем информацию о пациенте
+    first_record = found_records[0]
+    person_info = {
+        "last_name": first_record.last_name,
+        "first_name": first_record.first_name,
+        "middle_name": first_record.middle_name,
+        "birthday": first_record.birthday.strftime('%d.%m.%Y'),
+        "age": str(_calculate_age(first_record.birthday))
+    }
+
+    # Разделяем все тесты по категориям, используя поле 'prefix'
+    categorized_tests = defaultdict(list)
+    for record in found_records:
+        category_key = CATEGORY_MAP.get(record.prefix, "unknown")
+        categorized_tests[category_key].append(record)
+
+    # Обрабатываем каждую категорию
+    processed_categories = {}
+    for category_name, tests_in_category in categorized_tests.items():
+        processed_categories[category_name] = _process_category_data(tests_in_category)
+
+    # Собираем финальный ответ
+    final_result = {
+        "success": True,
+        "result": {
+            "person": person_info,
+            **processed_categories
+        }
+    }
+
     logger.info(f"Найдено записей: {len(found_records)}")
 
-    return found_records
+    return final_result
