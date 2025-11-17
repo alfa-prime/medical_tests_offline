@@ -36,6 +36,7 @@ def _process_category_data(tests: Sequence['TestResult']) -> dict[str, any]:
     tests_by_date = defaultdict(list)
     for test in tests:
         test_info = {
+            "test_id": test.test_id,
             "service": test.service,
             "analyzer_name": test.analyzer_name,
             "test_code": test.test_code,
@@ -87,6 +88,7 @@ async def find_records_by_patient(
     # Извлекаем информацию о пациенте
     first_record = found_records[0]
     person_info = {
+        "person_id": first_record.person_id,
         "last_name": first_record.last_name,
         "first_name": first_record.first_name,
         "middle_name": first_record.middle_name,

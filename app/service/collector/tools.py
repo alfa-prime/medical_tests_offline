@@ -27,7 +27,7 @@ async def process_and_save_in_batches(
         batch = validated_records[i:i + batch_size]
 
         key_to_record_map = {
-            (rec.service_id, rec.last_name, rec.first_name, rec.middle_name, rec.birthday, rec.test_date,
+            (rec.test_id, rec.last_name, rec.first_name, rec.middle_name, rec.birthday, rec.test_date,
              rec.test_code): rec
             for rec in batch
         }
@@ -48,7 +48,7 @@ async def process_and_save_in_batches(
             )
 
             statement = statement.returning(
-                TestResult.service_id, TestResult.last_name, TestResult.first_name, TestResult.middle_name,
+                TestResult.test_id, TestResult.last_name, TestResult.first_name, TestResult.middle_name,
                 TestResult.birthday, TestResult.test_date, TestResult.test_code
             )
 

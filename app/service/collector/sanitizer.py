@@ -22,12 +22,13 @@ def sanitize_data(data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         result_id = each.get("EvnXml_id", None)
         if result_id:
             record = {
-                "prefix": each["prefix"],
-                "service_id": each["EvnUslugaPar_id"],
+                "person_id": each["Person_id"],
                 "last_name": each["Person_Surname"].capitalize(),
                 "first_name": each["Person_Firname"].capitalize(),
                 "middle_name": each["Person_Secname"].capitalize() if each["Person_Secname"] else "",
                 "birthday": _sanitize_date(each["Person_Birthday"]),
+                "test_id": each["EvnUslugaPar_id"],
+                "prefix": each["prefix"],
                 "service": each["MedService_Name"],
                 "analyzer_name": each["Resource_Name"],
                 "test_date": _sanitize_date(each["EvnUslugaPar_setDate"]),

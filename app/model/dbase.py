@@ -8,12 +8,13 @@ from app.core.encryption import EncryptedString
 
 
 class TestResultBase(SQLModel):
-    prefix: Optional[str] = None
-    service_id: str  # внутренний id услуги в ЕВМИАС
+    person_id: str
     last_name: str
     first_name: str
     middle_name: str = Field(default="")
     birthday: datetime.date
+    test_id: str  # внутренний id услуги в ЕВМИАС
+    prefix: Optional[str] = None
     test_date: datetime.date
     service: str
     analyzer_name: Optional[str] = None
@@ -35,11 +36,11 @@ class TestResult(TestResultBase, table=True):
     __table_args__ = (
         # Уникальный индекс для отсеивания дублей
         UniqueConstraint(
-            'service_id',
             'last_name',
             'first_name',
             'middle_name',
             'birthday',
+            'test_id',
             'test_date',
             'test_code',
             name='uq_patient_service_hash'
