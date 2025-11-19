@@ -1,9 +1,8 @@
-import json
 import datetime
 from typing import Sequence
 from collections import defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, desc
 
 from app.model import TestResult, RequestByPatient
 from app.core.logger_setup import logger
@@ -72,7 +71,7 @@ async def find_records_by_patient(
         TestResult.last_name == patient_data.last_name,
         TestResult.first_name == patient_data.first_name,
         TestResult.birthday == patient_data.birthday
-    )
+    ).order_by(desc(TestResult.test_date))
 
     if patient_data.middle_name is not None:
         statement = statement.where(TestResult.middle_name == patient_data.middle_name)
