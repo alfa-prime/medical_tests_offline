@@ -10,18 +10,23 @@ from app.model import TestResult
 from app.service import GatewayService
 from app.service.collector.process import collect_by_day
 from app.service.utils.telegram import send_telegram_message
+from app.service.dbase.dump_bd import create_database_dump
 
 settings = get_settings()
 
 
 async def sync_database(scheduler, retry_count: int = 0):
     """
-    Логика обновления: Last Date - 1 Day -> Today.
+    Универсальная задача синхронизации.
+    Выполняет:
+    1. Сбор данных (LastDate - 1 -> Today).
+    2. При успехе: Создает/Перезаписывает дамп daily_latest.dump.
+    3. При успехе: Шлет отчет в Telegram.
+    4. При ошибке: Планирует повтор через 30 мин (до settings.UPDATE_RETRY_ATTEMPTS раз).
     """
-    logger.info(f"[ManualUpdate] Старт задачи. Попытка #{retry_count + 1}")
+    logger.info(f"[SyncDB] Старт задачи. Попытка #{retry_count + 1}")
 
     async with AsyncSession(engine) as session:
-        # Создаем чистый клиент
         limits = httpx.Limits(max_connections=10)
         async with httpx.AsyncClient(
                 base_url=settings.GATEWAY_URL,
@@ -33,43 +38,69 @@ async def sync_database(scheduler, retry_count: int = 0):
             gateway_service = GatewayService(client=client)
 
             try:
-                # 1. Ищем дату
+                # --- СИНХРОНИЗАЦИЯ ---
                 result = await session.exec(select(func.max(TestResult.test_date)))
                 last_db_date = result.first()
 
-                # Если база пустая — берем начало года, иначе — шаг назад на 1 день
                 if not last_db_date:
                     start_date = datetime.date(datetime.datetime.now().year, 1, 1)
                 else:
                     start_date = last_db_date - datetime.timedelta(days=1) # noqa
 
                 today = datetime.date.today()
-                logger.info(f"Период: {start_date} -> {today}")
 
                 if start_date > today:
-                    await send_telegram_message("Результаты исследований offline\n✅ Данные актуальны.")
-                    return
+                    logger.info("Данные актуальны, сбор не требуется.")
+                else:
+                    logger.info(f"Сбор данных за период: {start_date} -> {today}")
+                    delta = (today - start_date).days
+                    days_list = [start_date + datetime.timedelta(days=i) for i in range(delta + 1)]
 
-                # 2. Качаем
-                delta = (today - start_date).days
-                days_list = [start_date + datetime.timedelta(days=i) for i in range(delta + 1)]
+                    for current_date in days_list:
+                        await collect_by_day(current_date.strftime("%d.%m.%Y"), gateway_service, session)
+                        await asyncio.sleep(1.0)
 
-                for current_date in days_list:
-                    await collect_by_day(current_date.strftime("%d.%m.%Y"), gateway_service, session)
-                    await asyncio.sleep(1.0)  # Небольшая пауза
+                # --- ДАМП БАЗЫ ---
+                # Делаем дамп с фиксированным именем (перезаписываем старый)
+                logger.info("Создание ежедневного дампа...")
+                dump_res = await create_database_dump(filename="daily_latest.dump")
+                dump_path = dump_res.get("file_path", "unknown")
 
-                # 3. Успех
-                await send_telegram_message(f"Результаты исследований offline\n{start_date} — {today}\n✅ <b>Update Done</b>")
+                # --- УВЕДОМЛЕНИЕ ---
+                message = (
+                    f"Результаты исследований offline\n"
+                    f"✅ <b>Update & Backup Success</b>\n"
+                    f"📅 Данные: {start_date} — {today}\n"
+                    f"💾 Дамп: {dump_path}\n"
+                    f"🔄 Попытка: {retry_count + 1}"
+                )
+                logger.info("[SyncDB] Успешно завершено.")
+                await send_telegram_message(message)
 
             except Exception as e:
-                logger.error(f"❌ Ошибка: {e}", exc_info=True)
-                await send_telegram_message(f"Результаты исследований offline\n❌ <b>Error</b>: {e}\nПовтор через 30 мин.")
+                logger.error(f"❌ [SyncDB] Ошибка: {e}", exc_info=True)
 
-                # 4. Повторные попытки (количество попыток задаем в .env)
+                # Уведомление об ошибке
+                await send_telegram_message(
+                    f"Результаты исследований offline\n"
+                    f"❌ <b>Update Error</b>\n"
+                    f"Ошибка: {e}\n"
+                    f"⏳ Попытка {retry_count + 1}/{settings.UPDATE_RETRY_ATTEMPTS}. Повтор через 30 мин."
+                )
+
+                # --- ПЛАНИРОВАНИЕ ПОВТОРА ---
                 if retry_count < settings.UPDATE_RETRY_ATTEMPTS:
                     run_time = datetime.datetime.now() + datetime.timedelta(minutes=30)
+                    # Добавляем задачу-повтор. Она выполнится один раз в run_time.
                     scheduler.add_job(
-                        sync_database, 'date', run_date=run_time,
+                        sync_database,
+                        'date',
+                        run_date=run_time,
                         args=[scheduler, retry_count + 1],
-                        id=f"retry_{datetime.datetime.now().timestamp()}"
+                        id=f"retry_sync_{datetime.datetime.now().timestamp()}"
+                    )
+                else:
+                    await send_telegram_message(
+                        "Результаты исследований offline\n"
+                        "⛔ <b>Update</b>: Превышен лимит попыток. Остановка."
                     )

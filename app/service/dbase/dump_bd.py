@@ -2,6 +2,7 @@ import asyncio
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from fastapi import HTTPException
 
@@ -10,19 +11,22 @@ from app.core.logger_setup import logger
 
 settings = get_settings()
 
-async def create_database_dump() -> dict:
+async def create_database_dump(filename: Optional[str] = None) -> dict:
     """
     Создает дамп базы данных с помощью pg_dump и сохраняет его в файл.
     Возвращает путь к файлу в случае успеха.
     """
     # 1. Определяем имя и путь для файла дампа
     # Используем папку 'debug', как мы обсуждали ранее
-    dump_folder = Path(settings.FOLDER_DEBUG) / "dumps"
+    dump_folder = Path(settings.OUTPUT_FOLDER) / "dumps"
     dump_folder.mkdir(parents=True, exist_ok=True) # Создаем папку, если ее нет
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    # Используем расширение .dump, так как формат будет бинарный
-    dump_filename = f"dump_{timestamp}.dump"
+    if filename:
+        dump_filename = filename
+    else:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        dump_filename = f"dump_{timestamp}.dump"
+
     dump_filepath = dump_folder / dump_filename
 
     # 2. Формируем команду для pg_dump
