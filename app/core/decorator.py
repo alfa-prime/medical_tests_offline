@@ -17,10 +17,7 @@ def _truncate_for_log(data: any, max_length: int = 300) -> str:
     для безопасного логирования, добавляя маркер обрезки.
     """
     try:
-        # --- ШАГ 2: ИСПОЛЬЗУЕМ jsonable_encoder ---
-        # Сначала "подготавливаем" данные, превращая все сложные типы в JSON-совместимые
         json_compatible_data = jsonable_encoder(data)
-        # И только потом передаем их в стандартный json.dumps
         data_str = json.dumps(json_compatible_data, ensure_ascii=False)
 
     except TypeError:

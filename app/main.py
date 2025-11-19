@@ -6,10 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core import init_gateway_client, shutdown_gateway_client, global_exception_handler, get_settings, logger
 from app.route import health_router, collector_router, debug_router, service_router
 
-settings =get_settings()
+settings = get_settings()
 tags_metadata = []
-
-
 
 
 @asynccontextmanager
@@ -19,10 +17,9 @@ async def lifespan(app: FastAPI):
     await shutdown_gateway_client(app)
 
 
-
 app = FastAPI(
     tags=tags_metadata,
-    title="E2S(mt): Шлюз Самсон <-> ЕВМИАС {dbase version}",
+    title="E2S: Самсон <-> ЕВМИАС {dbase version}",
     description="""
     Основная задача сервиса — получать данные пациента из МИС «Самсон», 
     запрашивать у МИС «ЕВМИАС» сведения о его медицинских исследованиях (УЗИ, рентген, анализы и т.д.) 

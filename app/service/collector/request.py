@@ -64,4 +64,5 @@ async def fetch_test_result(result_id: str, gateway_service: GatewayService) -> 
     }
 
     response = await gateway_service.make_request(method="post", json=payload)
+    logger.critical(response)
     return response
