@@ -13,7 +13,7 @@ async def init_scheduler(app: FastAPI):
     app.state.scheduler = scheduler
 
     scheduler.start()
-    logger.info("💤 Scheduler инициализирован и запущен.")
+    logger.info("Scheduler инициализирован и запущен.")
 
 
 async def shutdown_scheduler(app: FastAPI):

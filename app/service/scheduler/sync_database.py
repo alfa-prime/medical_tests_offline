@@ -18,7 +18,7 @@ async def sync_database(scheduler, retry_count: int = 0):
     """
     Логика обновления: Last Date - 1 Day -> Today.
     """
-    logger.info(f"🔄 [ManualUpdate] Старт задачи. Попытка #{retry_count + 1}")
+    logger.info(f"[ManualUpdate] Старт задачи. Попытка #{retry_count + 1}")
 
     async with AsyncSession(engine) as session:
         # Создаем чистый клиент
@@ -44,7 +44,7 @@ async def sync_database(scheduler, retry_count: int = 0):
                     start_date = last_db_date - datetime.timedelta(days=1) # noqa
 
                 today = datetime.date.today()
-                logger.info(f"📅 Период: {start_date} -> {today}")
+                logger.info(f"Период: {start_date} -> {today}")
 
                 if start_date > today:
                     await send_telegram_message("Результаты исследований offline\n✅ Данные актуальны.")
