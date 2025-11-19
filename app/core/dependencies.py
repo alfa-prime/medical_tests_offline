@@ -15,7 +15,7 @@ async def check_permission(settings: Annotated[Settings, Depends(get_settings)])
     Dependency, которая проверяет, разрешено ли использовать этот роут.
     Если нет, выбрасывает ошибку 404, чтобы скрыть его существование.
     """
-    if not settings.ALLOW_DB_CLEAR_ENDPOINT:
+    if not settings.ALLOW_SERVICE_ROUTE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This endpoint is not available."

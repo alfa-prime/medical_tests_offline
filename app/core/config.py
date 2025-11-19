@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: int
 
-    ALLOW_DB_CLEAR_ENDPOINT: bool = False
+    ALLOW_SERVICE_ROUTE: bool = False
 
     LOGS_LEVEL: str = "INFO"
     DEBUG_MODE: bool = True
