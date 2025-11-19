@@ -59,7 +59,7 @@ async def sync_database(scheduler, retry_count: int = 0):
                     await asyncio.sleep(1.0)  # Небольшая пауза
 
                 # 3. Успех
-                await send_telegram_message(f"Результаты исследований offline\n✅ <b>Update Done</b>\n{start_date} — {today}")
+                await send_telegram_message(f"Результаты исследований offline\n{start_date} — {today}\n✅ <b>Update Done</b>")
 
             except Exception as e:
                 logger.error(f"❌ Ошибка: {e}", exc_info=True)
