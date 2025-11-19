@@ -29,7 +29,7 @@ def json_serial_date(obj):
 
 
 def save_json(filename: str, data: list | dict):
-    debug_folder = Path(settings.FOLDER_DEBUG)
+    debug_folder = Path(settings.OUTPUT_FOLDER)
     debug_folder.mkdir(parents=True, exist_ok=True)
     file_path = debug_folder / filename
 

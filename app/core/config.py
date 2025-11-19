@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     LOGS_LEVEL: str = "INFO"
     DEBUG_MODE: bool = True
-    FOLDER_DEBUG: str = "debug"
+    OUTPUT_FOLDER: str
 
     ENCRYPTION_KEY: str
 
