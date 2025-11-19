@@ -41,7 +41,7 @@ async def sync_database(scheduler, retry_count: int = 0):
                 if not last_db_date:
                     start_date = datetime.date(datetime.datetime.now().year, 1, 1)
                 else:
-                    start_date = last_db_date - datetime.timedelta(days=1)
+                    start_date = last_db_date - datetime.timedelta(days=1) # noqa
 
                 today = datetime.date.today()
                 logger.info(f"📅 Период: {start_date} -> {today}")
@@ -69,7 +69,7 @@ async def sync_database(scheduler, retry_count: int = 0):
                 if retry_count < settings.UPDATE_RETRY_ATTEMPTS:
                     run_time = datetime.datetime.now() + datetime.timedelta(minutes=30)
                     scheduler.add_job(
-                        update_database_job, 'date', run_date=run_time,
+                        sync_database, 'date', run_date=run_time,
                         args=[scheduler, retry_count + 1],
                         id=f"retry_{datetime.datetime.now().timestamp()}"
                     )
