@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -102,7 +104,19 @@ async def _collect_and_process_data(
             records_for_json.append(rec_dict)
 
         try:
-            save_json(filename="skipped_duplicates.json", data=records_for_json)
+            # Определяем границы периода из входного списка periods
+            # periods - это список строк типа ['01.01.2025', '02.01.2025']
+            start_p = periods[0]
+            end_p = periods[-1]
+
+            # Генерируем текущую метку времени: Год-Месяц-День_Час-Мин-Сек
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+            # Формируем имя файла
+            # Пример: skipped_2025-11-19_15-05-00_[25.10.2025-26.10.2025].json
+            filename = f"skipped_{timestamp}_[{start_p}-{end_p}].json"
+
+            save_json(filename=filename, data=records_for_json)
             logger.info(f"Отчет о {len(skipped_records)} пропущенных записях сохранен.")
         except Exception as e:
             logger.error(f"Не удалось сохранить JSON с пропущенными записями: {e}")

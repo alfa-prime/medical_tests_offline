@@ -1,13 +1,52 @@
+from typing import Annotated
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-
 from fastapi import APIRouter, Depends, Request
-from app.core.dependencies import check_permission, get_api_key
+
+from app.core.dependencies import get_session, check_permission, get_api_key
 from app.service.dbase.clear_db import reset_entire_database
 from app.service.dbase.dump_bd import create_database_dump
 from app.core.decorator import route_handle
 from app.service.scheduler import sync_database
+from app.core import get_gateway_service
+from app.model import RequestByMonth, RequestByDay
+from app.service import GatewayService
+from app.service.collector.process import collect_by_day, collect_by_month
 
 router = APIRouter(prefix="/service", tags=["Service functions"], dependencies=[Depends(get_api_key)])
+
+
+@router.post(
+    "/by_day",
+    summary="Собрать данные о результатах исследований за ОДИН день",
+    description="Отправляет запрос на API-шлюз с указанием даты дня, ответ обрабатывается и сохраняется в БД.",
+    dependencies=[Depends(check_permission)]
+)
+@route_handle
+async def get_data_for_day(
+        day: RequestByDay,
+        gateway_service: Annotated[GatewayService, Depends(get_gateway_service)],
+        session: Annotated[AsyncSession, Depends(get_session)],
+):
+    return await collect_by_day(day.date, gateway_service, session)
+
+
+@router.post(
+    path="/by_month",
+    summary="Собрать данные о результатах исследований за месяц",
+    description="Отправляет запрос на API-шлюз с указанием периода, ответ обрабатывается и сохраняется в БД.",
+    dependencies=[Depends(check_permission)]
+)
+@route_handle
+async def get_data_for_month(
+        request_data: RequestByMonth,
+        gateway_service: Annotated[GatewayService, Depends(get_gateway_service)],
+        session: Annotated[AsyncSession, Depends(get_session)]
+):
+    """Собирает данные об исследованиях за месяц указанный в запросе"""
+    year = request_data.year
+    month = request_data.month
+    return await collect_by_month(year, month, gateway_service, session)
 
 
 @router.post(
