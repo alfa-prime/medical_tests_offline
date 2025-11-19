@@ -3,7 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core import init_gateway_client, shutdown_gateway_client, global_exception_handler, get_settings, logger
+from app.core import (
+    init_gateway_client,
+    shutdown_gateway_client,
+    init_scheduler,
+    shutdown_scheduler,
+    global_exception_handler,
+    get_settings,
+    logger
+)
 from app.route import health_router, collector_router, debug_router, service_router
 
 settings = get_settings()
@@ -14,7 +22,9 @@ tags_metadata = []
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_gateway_client(app)
+    await init_scheduler(app)
     yield
+    await shutdown_scheduler(app)
     await shutdown_gateway_client(app)
 
 
@@ -30,7 +40,7 @@ app = FastAPI(
     предоставления возможности работы, при отсутствии связи с ЕВМИАС.
     """,
     lifespan=lifespan,
-    version="0.0.1"
+    version="0.1.1"
 )
 
 app.add_exception_handler(Exception, global_exception_handler)
