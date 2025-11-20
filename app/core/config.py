@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     LOGS_LEVEL: str = "INFO"
     DEBUG_MODE: bool = True
     OUTPUT_FOLDER: str
+    BACKUP_HOUR: int = 20
 
     ENCRYPTION_KEY: str
 
