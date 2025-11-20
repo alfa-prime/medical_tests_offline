@@ -65,4 +65,14 @@ class RequestByPatient(BaseModel):
     last_name: str = Field(..., description="Фамилия", examples=["Хайбулина"])
     first_name: str = Field(..., description="Имя", examples=["Надежда"])
     middle_name: str | None = Field(default=None, description="Отчество (необязательно)", examples=["Олеговна"])
-    birthday: datetime.date = Field(..., description="Дата рождения в формате ГГГГ-ММ-ДД", examples=["1967-03-15"])
+    # birthday: datetime.date = Field(..., description="Дата рождения в формате ГГГГ-ММ-ДД", examples=["1967-03-15"])
+    birthday: str = Field(..., description="Дата рождения в формате ДД.ММ.ГГГГ", examples=["15.03.1967"])
+
+    @field_validator('birthday') # noqa
+    @staticmethod
+    def validate_birthday_format(v: str) -> str:
+        try:
+            datetime.datetime.strptime(v, '%d.%m.%Y')
+        except ValueError:
+            raise ValueError("Неверный формат даты. Ожидается ДД.ММ.ГГГГ")
+        return v

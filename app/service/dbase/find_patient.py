@@ -62,15 +62,17 @@ async def find_records_by_patient(
     Выполняет поиск всех записей в таблице test_results по данным пациента.
     Возвращает список найденных записей.
     """
+    target_birthday = datetime.datetime.strptime(patient_data.birthday, '%d.%m.%Y').date()
+
     logger.info(
         f"Выполняется поиск по пациенту: "
-        f"{patient_data.last_name} {patient_data.first_name}, ДР: {patient_data.birthday}"
+        f"{patient_data.last_name} {patient_data.first_name}, ДР: {target_birthday}"
     )
 
     statement = select(TestResult).where(
         TestResult.last_name == patient_data.last_name,
         TestResult.first_name == patient_data.first_name,
-        TestResult.birthday == patient_data.birthday
+        TestResult.birthday == target_birthday
     ).order_by(desc(TestResult.test_date))
 
     if patient_data.middle_name is not None:
