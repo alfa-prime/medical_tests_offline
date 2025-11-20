@@ -46,7 +46,8 @@ async def get_data_for_month(
     """Собирает данные об исследованиях за месяц указанный в запросе"""
     year = request_data.year
     month = request_data.month
-    return await collect_by_month(year, month, gateway_service, session)
+    prefixes = request_data.prefixes
+    return await collect_by_month(year, month, gateway_service, session, prefixes)
 
 
 @router.post(

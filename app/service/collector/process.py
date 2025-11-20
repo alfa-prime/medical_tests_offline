@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -54,16 +55,27 @@ def _validate_records(records_as_dicts: list[dict[str, any]]) -> list[TestResult
 async def _collect_and_process_data(
         periods: list[str],
         gateway_service: GatewayService,
-        session: AsyncSession
+        session: AsyncSession,
+        prefixes: Optional[list[str]] = None
 ) -> dict:
     """
     Собирает данные за список периодов, обрабатывает и сохраняет в БД.
     """
+    if prefixes:
+        # Берем только те, что есть в списке
+        departments_to_scan = [d for d in DEPARTMENTS if d.prefix in prefixes]
+        if not departments_to_scan:
+            logger.warning(f"Отделения с префиксами {prefixes} не найдены")
+            return {"success": False, "message": "No matching departments found"}
+    else:
+        departments_to_scan = DEPARTMENTS
+
+
     gateway_response = []
 
     for day in periods:
         period = f"{day} - {day}"
-        for department in DEPARTMENTS:
+        for department in departments_to_scan:
             logger.info(f"Период '{period}': собираю данные для '{department.prefix}'")
             data_raw = await fetch_period_data(period, department.id, gateway_service)
 
@@ -142,7 +154,13 @@ async def collect_by_day(period: str, gateway_service: GatewayService, session: 
         raise HTTPException(status_code=500, detail="Произошла непредвиденная ошибка на сервере.")
 
 
-async def collect_by_month(year: int, month: int, gateway_service: GatewayService, session: AsyncSession):
+async def collect_by_month(
+        year: int,
+        month: int,
+        gateway_service: GatewayService,
+        session: AsyncSession,
+        prefixes: Optional[list[str]] = None
+):
     """
     Собирает и сохраняет данные за весь указанный месяц.
     """
@@ -150,7 +168,7 @@ async def collect_by_month(year: int, month: int, gateway_service: GatewayServic
         # Генерируем список периодов (дней) для всего месяца
         days_in_month = date_generator(year, month)
         periods = [day.strftime("%d.%m.%Y") for day in days_in_month]
-        return await _collect_and_process_data(periods, gateway_service, session)
+        return await _collect_and_process_data(periods, gateway_service, session, prefixes)
 
     except Exception as e:
         logger.error(f"Операция сбора за месяц '{month}-{year}' прервана: {e}", exc_info=True)

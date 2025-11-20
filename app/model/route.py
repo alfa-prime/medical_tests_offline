@@ -58,6 +58,9 @@ class RequestByMonth(BaseModel):
     """Модель для запроса по месяцам"""
     year: int = Field(..., ge=2022, le=2030, description="Год в формате ГГГГ", examples=[2024])
     month: int = Field(..., ge=1, le=12, description="Номер месяца (от 1 до 12)", examples=[1])
+    prefixes: Optional[list[str]] = Field(default=None,
+                                          description="Список префиксов отделений (если нужно собрать только их)",
+                                          examples=[["endoscopy", "ct_scan"]])
 
 
 class RequestByPatient(BaseModel):
@@ -65,7 +68,6 @@ class RequestByPatient(BaseModel):
     last_name: str = Field(..., description="Фамилия", examples=["Хайбулина"])
     first_name: str = Field(..., description="Имя", examples=["Надежда"])
     middle_name: str | None = Field(default=None, description="Отчество (необязательно)", examples=["Олеговна"])
-    # birthday: datetime.date = Field(..., description="Дата рождения в формате ГГГГ-ММ-ДД", examples=["1967-03-15"])
     birthday: str = Field(..., description="Дата рождения в формате ДД.ММ.ГГГГ", examples=["15.03.1967"])
 
     @field_validator('birthday') # noqa

@@ -13,4 +13,6 @@ DEPARTMENTS = (
     Department(id="3010101000003273", prefix="tests", name="Клинико-диагностическая лаборатория ММЦЦ"),
     Department(id="3010101000003274", prefix="ultra_sound", name="Отделение ультразвуковой диагностики стационар ММЦ"),
     Department(id="3010101000003275", prefix="functional", name="Отделение функциональной диагностики ММЦ"),
+    Department(id="3010101000012127", prefix="ct_scan", name="Кабинет компьютерной томографии ММЦ"),
+    Department(id="3010101000008632", prefix="endoscopy", name="Эндоскопический кабинет ММЦ")
 )

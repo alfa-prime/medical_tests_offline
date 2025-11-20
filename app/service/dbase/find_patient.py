@@ -11,7 +11,9 @@ CATEGORY_MAP = {
     "tests": "medtests",
     "ultra_sound": "ultrasound_scan",
     "x-ray": "x_ray",
-    "functional": "functional_tests"
+    "functional": "functional_tests",
+    "ct_scan": "ct_scan",
+    "endoscopy": "endoscopy"
 }
 
 
