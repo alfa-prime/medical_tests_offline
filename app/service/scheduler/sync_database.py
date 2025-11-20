@@ -45,7 +45,7 @@ async def sync_database(scheduler, retry_count: int = 0):
                 if not last_db_date:
                     start_date = datetime.date(datetime.datetime.now().year, 1, 1)
                 else:
-                    start_date = last_db_date - datetime.timedelta(days=1) # noqa
+                    start_date = last_db_date - datetime.timedelta(days=2) # noqa
 
                 today = datetime.date.today()
 
