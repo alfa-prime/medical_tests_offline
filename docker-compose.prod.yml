@@ -14,7 +14,7 @@ services:
     volumes:
       - ./app:/code/app
       - ./logs:/code/logs
-      - ./debug:/code/materials
+      - ./output:/code/${OUTPUT_FOLDER}
     restart: unless-stopped
     networks:
       - app_network

@@ -29,9 +29,9 @@ def json_serial_date(obj):
 
 
 def save_json(filename: str, data: list | dict):
-    debug_folder = Path(settings.OUTPUT_FOLDER)
-    debug_folder.mkdir(parents=True, exist_ok=True)
-    file_path = debug_folder / filename
+    output_folder = Path(settings.OUTPUT_FOLDER)
+    output_folder.mkdir(parents=True, exist_ok=True)
+    file_path = output_folder / filename
 
     with open(file_path, "w", encoding='utf-8') as file:
         json.dump(data, file, indent=2, ensure_ascii=False, default=json_serial_date)  # noqa

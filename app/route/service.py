@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Request
 
 from app.core.dependencies import get_session, check_permission, get_api_key
-from app.service.dbase.clear_db import reset_entire_database
+# from app.service.dbase.clear_db import reset_entire_database
 from app.service.dbase.dump_bd import create_database_dump
 from app.core.decorator import route_handle
 from app.service.scheduler import sync_database
@@ -75,7 +75,7 @@ async def force_update_now(request: Request):
     "/dump",
     summary="Создать дамп базы данных",
     description="Запускает процесс pg_dump для создания резервной копии базы данных. Файл будет сохранен на сервере.",
-    dependencies=[Depends(check_permission)]  # !!! ОБЯЗАТЕЛЬНО защищаем этот роут
+    dependencies=[Depends(check_permission)]
 )
 @route_handle
 async def create_db_dump():
@@ -84,13 +84,13 @@ async def create_db_dump():
     """
     return await create_database_dump()
 
-
-@router.delete(
-    "/reset-database",
-    summary="Полностью сбросить базу данных",
-    description="!!! ОПАСНО !!! Удаляет ВСЕ таблицы из базы данных и создает их заново. Все данные будут потеряны.",
-    dependencies=[Depends(check_permission)]
-)
-@route_handle
-async def clear_db():
-    return await reset_entire_database()
+# отключаем на проде он на фиг не нужен
+# @router.delete(
+#     "/reset-database",
+#     summary="Полностью сбросить базу данных",
+#     description="!!! ОПАСНО !!! Удаляет ВСЕ таблицы из базы данных и создает их заново. Все данные будут потеряны.",
+#     dependencies=[Depends(check_permission)]
+# )
+# @route_handle
+# async def clear_db():
+#     return await reset_entire_database()
