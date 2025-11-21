@@ -2,7 +2,7 @@ import datetime
 from typing import Optional
 
 from sqlmodel import Field, SQLModel, func
-from sqlalchemy import Column, DateTime, Text
+from sqlalchemy import Column, DateTime, Text, Boolean
 from sqlalchemy.schema import UniqueConstraint, Index
 from app.core.encryption import EncryptedString
 
@@ -20,6 +20,7 @@ class TestResultBase(SQLModel):
     analyzer_name: Optional[str] = None
     test_code: str
     test_name: str
+    is_result: bool = Field(default=False, sa_column=Column(Boolean, index=True, nullable=False))
     test_result: Optional[str] = Field(default=None, sa_column=Column(Text))
 
 
