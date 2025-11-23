@@ -59,7 +59,7 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
 
         # Если контента нет и это не последняя попытка - ждем
         if attempt < MAX_EMPTY_RETRIES:
-            logger.critical(f"Пустой ответ для {result_id}. Ждем {RETRY_DELAY}с и пробуем снова ({attempt}/{MAX_EMPTY_RETRIES})")
+            logger.warning(f"Пустой ответ для {result_id}. Ждем {RETRY_DELAY}с и пробуем снова ({attempt}/{MAX_EMPTY_RETRIES})")
             await asyncio.sleep(RETRY_DELAY)
 
 
