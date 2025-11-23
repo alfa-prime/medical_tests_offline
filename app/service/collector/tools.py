@@ -1,3 +1,4 @@
+from app.core.database import engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
@@ -86,75 +87,76 @@ async def full_audit_dbase(session: AsyncSession, batch_size: int = 1000) -> dic
     1.3 Наличие фразы-заглушки "Результат пуст" (которая могла попасть туда по ошибке с флагом True)
     2. Считает количество записей с is_result=False (пустые результаты исследований)
     """
-    start_time = time.time()
-    logger.info(f"ЗАПУСК ПОЛНОГО АУДИТА. Размер пачки: {batch_size}")
+    async with AsyncSession(engine) as session:
+        start_time = time.time()
+        logger.info(f"ЗАПУСК ПОЛНОГО АУДИТА. Размер пачки: {batch_size}")
 
-    # Подсчет записей с пустым результатом исследований (is_result = False) ---
-    query_empty = select(func.count()).where(TestResult.is_result == False)
-    empty_count = (await session.exec(query_empty)).one() # noqa
+        # Подсчет записей с пустым результатом исследований (is_result = False) ---
+        query_empty = select(func.count()).where(TestResult.is_result == False)
+        empty_count = (await session.exec(query_empty)).one() # noqa
 
-    # Проверка целостности заполненных результатов (is_result = True) ---
-    query_completed = select(func.count()).where(TestResult.is_result == True)
-    completed_count = (await session.exec(query_completed)).one() # noqa
+        # Проверка целостности заполненных результатов (is_result = True) ---
+        query_completed = select(func.count()).where(TestResult.is_result == True)
+        completed_count = (await session.exec(query_completed)).one() # noqa
 
-    suspicious_records = []
-    offset = 0
-    processed = 0
+        suspicious_records = []
+        offset = 0
+        processed = 0
 
-    while True:
-        statement = (
-            select(TestResult)
-            .where(TestResult.is_result == True)
-            .order_by(TestResult.id)
-            .offset(offset)
-            .limit(batch_size)
-        )
-        result = await session.exec(statement) # noqa
-        batch = result.all()
+        while True:
+            statement = (
+                select(TestResult)
+                .where(TestResult.is_result == True)
+                .order_by(TestResult.id)
+                .offset(offset)
+                .limit(batch_size)
+            )
+            result = await session.exec(statement) # noqa
+            batch = result.all()
 
-        if not batch:
-            break
+            if not batch:
+                break
 
-        for record in batch:
-            # Расшифровка и проверка
-            content = record.test_result
-            content_str = str(content).strip() if content else ""
+            for record in batch:
+                # Расшифровка и проверка
+                content = record.test_result
+                content_str = str(content).strip() if content else ""
 
-            problem = None
+                problem = None
 
-            if content is None:
-                problem = "Нет результата исследований"
-            elif len(content_str) < 5:
-                problem = f"Слишком короткий результат исследований: '{content_str}'"
-            elif content_str == "Результат пуст":
-                problem = "Результат пуст"
+                if content is None:
+                    problem = "Нет результата исследований"
+                elif len(content_str) < 5:
+                    problem = f"Слишком короткий результат исследований: '{content_str}'"
+                elif content_str == "Результат пуст":
+                    problem = "Результат пуст"
 
-            if problem:
-                suspicious_records.append({
-                    "id": record.id,
-                    "test_id": record.test_id,
-                    "date": record.test_date.strftime('%d.%m.%Y'),
-                    "patient": f"{record.last_name} {record.first_name}",
-                    "problem": problem
-                })
+                if problem:
+                    suspicious_records.append({
+                        "id": record.id,
+                        "test_id": record.test_id,
+                        "date": record.test_date.strftime('%d.%m.%Y'),
+                        "patient": f"{record.last_name} {record.first_name}",
+                        "problem": problem
+                    })
 
-        processed += len(batch)
-        offset += batch_size
+            processed += len(batch)
+            offset += batch_size
 
-        if processed % 5000 == 0:
-            logger.info(f"Проверено {processed} / {completed_count}...")
+            if processed % 5000 == 0:
+                logger.info(f"Проверено {processed} / {completed_count}...")
 
-    duration = time.time() - start_time
-    status = "OK" if not suspicious_records else "FAIL"
+        duration = time.time() - start_time
+        status = "OK" if not suspicious_records else "FAIL"
 
-    logger.info(f"Аудит завершен. Статус: {status}. Пустой результат: {empty_count}. Ошибок: {len(suspicious_records)}")
+        logger.info(f"Аудит завершен. Статус: {status}. Пустой результат: {empty_count}. Ошибок: {len(suspicious_records)}")
 
-    return {
-        "status": status,
-        "duration": round(duration, 2),
-        "total_checked": processed,  # Проверено (готовых)
-        "empty_count": empty_count,  # is_result=False
-        "bad_count": len(suspicious_records),  # Битая целостность
-        "problems": suspicious_records[:10]  # Примеры ошибок
-    }
+        return {
+            "status": status,
+            "duration": round(duration, 2),
+            "total_checked": processed,  # Проверено (готовых)
+            "empty_count": empty_count,  # is_result=False
+            "bad_count": len(suspicious_records),  # Битая целостность
+            "problems": suspicious_records[:10]  # Примеры ошибок
+        }
 

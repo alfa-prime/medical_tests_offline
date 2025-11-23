@@ -53,16 +53,15 @@ async def get_data_for_month(
 
 @router.post(
     "/audit-full-db-background",
-    summary="Запуск аудита в фоне",
-    description="Запускает процесс аудита базы данных в фоне. Прогресс и результат в логах (make logs-prod [prod] or make logs [dev])",
+    summary="Запуск аудита базы данных в фоне",
+    description="Запускает процесс аудита базы данных в фоне. Прогресс и итоги в логах",
 )
 @route_handle
 async def audit_full_database_background(
         background_tasks: BackgroundTasks,
-        session: Annotated[AsyncSession, Depends(get_session)],
         batch_size: int = 1000
 ):
-    background_tasks.add_task(full_audit_dbase, session, batch_size)
+    background_tasks.add_task(full_audit_dbase, batch_size=batch_size)
 
     return {
         "status": "ACCEPTED",
