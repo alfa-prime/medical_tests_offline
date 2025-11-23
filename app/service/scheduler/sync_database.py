@@ -56,7 +56,7 @@ async def sync_database(scheduler, retry_count: int = 0):
 
                 # --- АУДИТ ---
                 logger.info("Запуск пре-бэкап аудита...")
-                audit_result = await full_audit_dbase(session)
+                audit_result = await full_audit_dbase()
 
                 if audit_result["status"] == "OK":
                     audit_icon = "✅"
