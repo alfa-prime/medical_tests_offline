@@ -78,7 +78,7 @@ async def process_and_save_in_batches(
     return {"inserted": total_inserted, "skipped": all_skipped_records}
 
 
-async def full_audit_dbase(session: AsyncSession, batch_size: int = 1000) -> dict:
+async def full_audit_dbase(batch_size: int = 1000) -> dict:
     """
     Выполняет полный аудит базы данных на предмет целостности зашифрованных данных.
     1. Проверяет записи с is_result=True на:
