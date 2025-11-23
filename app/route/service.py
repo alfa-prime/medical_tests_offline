@@ -1,9 +1,10 @@
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, BackgroundTasks
 
 from app.core.dependencies import get_session, check_permission, get_api_key
+from app.service.collector.tools import full_audit_dbase
 # from app.service.dbase.clear_db import reset_entire_database
 from app.service.dbase.dump_bd import create_database_dump
 from app.core.decorator import route_handle
@@ -14,6 +15,25 @@ from app.service import GatewayService
 from app.service.collector.process import collect_by_day, collect_by_month
 
 router = APIRouter(prefix="/service", tags=["Service functions"], dependencies=[Depends(get_api_key)])
+
+
+@router.post(
+    "/audit-full-db-background",
+    summary="Запуск аудита в фоне",
+    description="Запускает процесс аудита в фоне. Ответ приходит мгновенно. Результаты ищи в логах (make logs).",
+)
+@route_handle
+async def audit_full_database_background(
+        background_tasks: BackgroundTasks,
+        session: Annotated[AsyncSession, Depends(get_session)],
+        batch_size: int = 1000
+):
+    background_tasks.add_task(full_audit_dbase, session, batch_size)
+
+    return {
+        "status": "ACCEPTED",
+        "message": "Аудит запущен в фоновом режиме. Следите за логами контейнера."
+    }
 
 
 @router.post(

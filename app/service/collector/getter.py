@@ -62,9 +62,6 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
             logger.warning(f"Пустой ответ для {result_id}. Ждем {RETRY_DELAY}с и пробуем снова ({attempt}/{MAX_EMPTY_RETRIES})")
             await asyncio.sleep(RETRY_DELAY)
 
-
-    item.pop("result_id")
-
     if html_content:
         item["test_result"] = await parse_html_test_result(html_content)
         item["is_result"] = True
@@ -89,6 +86,7 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
         item["test_result"] = "Результат пуст"
         item["is_result"] = False
 
+    item.pop("result_id")
     return item
 
 
