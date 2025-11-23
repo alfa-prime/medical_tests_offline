@@ -40,17 +40,16 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
     Получает результат для ОДНОГО теста.
     Если происходит ошибка, выбрасывает исключение.
     """
-    test_result_raw = ''
     result_id = item.get("result_id")
     if not result_id:
         raise ValueError(f"Не найден result_id для элемента: {item.get('service_name')}")
 
-    MAX_EMPTY_RETRIES = 5
-    RETRY_DELAY = 2.0
+    max_empty_retries = 5 # количество повторов для получения результата исследований
+    retry_delay = 2.0 # продолжительность задержки
     html_content = None
 
-    for attempt in range(1, MAX_EMPTY_RETRIES + 1):
-        # Делаем запрос
+    # получаем результат исследования
+    for attempt in range(1, max_empty_retries + 1):
         test_result_raw = await fetch_test_result(result_id, gateway_service)
         html_content = test_result_raw.get("html")
 
@@ -58,9 +57,9 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
             break
 
         # Если контента нет и это не последняя попытка - ждем
-        if attempt < MAX_EMPTY_RETRIES:
-            logger.warning(f"Пустой ответ для {result_id}. Ждем {RETRY_DELAY}с и пробуем снова ({attempt}/{MAX_EMPTY_RETRIES})")
-            await asyncio.sleep(RETRY_DELAY)
+        if attempt < max_empty_retries:
+            logger.warning(f"Пустой ответ для {result_id}. Ждем {retry_delay}с и пробуем снова ({attempt}/{max_empty_retries})")
+            await asyncio.sleep(retry_delay)
 
     if html_content:
         item["test_result"] = await parse_html_test_result(html_content)
@@ -71,16 +70,16 @@ async def get_single_test_result(item: dict, gateway_service: GatewayService) ->
         date_str = test_date.strftime('%d.%m.%Y') if test_date else "Неизвестная дата"
         test_name = item.get('test_name', 'Неизвестный анализ')
         # Шлем алерт в Телеграм
-        msg = (
+        message = (
             f"Результаты исследований offline\n"
             f"⚠️ <b>Внимание: Пустой результат!</b>\n"
             f"👤 Пациент: {patient_name}\n"
             f"📅 Дата: {date_str}\n"
             f"🔬 Анализ: {test_name}\n"
             f"🆔 ID: {result_id}\n"
-            f"ℹ️ <i>Попыток получения: {MAX_EMPTY_RETRIES}</i>"
+            f"ℹ️ <i>Попыток получения: {max_empty_retries}</i>"
         )
-        await send_telegram_message(msg)
+        await send_telegram_message(message)
 
         logger.warning(f"Пустой результат: {item.get('last_name')} (ID: {result_id})")
         item["test_result"] = "Результат пуст"

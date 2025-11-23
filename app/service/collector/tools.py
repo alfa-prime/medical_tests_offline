@@ -80,24 +80,28 @@ async def process_and_save_in_batches(
 async def full_audit_dbase(session: AsyncSession, batch_size: int = 1000) -> dict:
     """
     Выполняет полный аудит базы данных на предмет целостности зашифрованных данных.
-    Проверяет записи с is_result=True на:
-    1. None
-    2. Короткую длину (< 5 символов)
-    3. Наличие фразы-заглушки "Результат пуст" (которая могла попасть туда по ошибке с флагом True)
+    1. Проверяет записи с is_result=True на:
+    1.1 None
+    1.2 Короткую длину (< 5 символов)
+    1.3 Наличие фразы-заглушки "Результат пуст" (которая могла попасть туда по ошибке с флагом True)
+    2. Считает количество записей с is_result=False (пустые результаты исследований)
     """
     start_time = time.time()
-    logger.info(f"🚀 ЗАПУСК ПОЛНОГО АУДИТА (Service Layer). Размер пачки: {batch_size}")
+    logger.info(f"ЗАПУСК ПОЛНОГО АУДИТА. Размер пачки: {batch_size}")
 
-    # 1. Считаем общее количество
-    total_query = select(func.count()).where(TestResult.is_result == True)
-    total_count = (await session.exec(total_query)).one()
+    # Подсчет записей с пустым результатом исследований (is_result = False) ---
+    query_empty = select(func.count()).where(TestResult.is_result == False)
+    empty_count = (await session.exec(query_empty)).one() # noqa
+
+    # Проверка целостности заполненных результатов (is_result = True) ---
+    query_completed = select(func.count()).where(TestResult.is_result == True)
+    completed_count = (await session.exec(query_completed)).one() # noqa
 
     suspicious_records = []
     offset = 0
     processed = 0
 
     while True:
-        # 2. Читаем пачками
         statement = (
             select(TestResult)
             .where(TestResult.is_result == True)
@@ -105,63 +109,52 @@ async def full_audit_dbase(session: AsyncSession, batch_size: int = 1000) -> dic
             .offset(offset)
             .limit(batch_size)
         )
-        result = await session.exec(statement)
+        result = await session.exec(statement) # noqa
         batch = result.all()
 
         if not batch:
             break
 
-        # 3. Анализируем
-        for rec in batch:
-            # Расшифровка происходит при обращении к атрибуту
-            content = rec.test_result
+        for record in batch:
+            # Расшифровка и проверка
+            content = record.test_result
             content_str = str(content).strip() if content else ""
 
             problem = None
 
             if content is None:
-                problem = "Content is None"
+                problem = "Нет результата исследований"
             elif len(content_str) < 5:
-                problem = f"Too short content: '{content_str}'"
+                problem = f"Слишком короткий результат исследований: '{content_str}'"
             elif content_str == "Результат пуст":
-                problem = "Phrase 'Результат пуст' found in Valid record"
+                problem = "Результат пуст"
 
             if problem:
                 suspicious_records.append({
-                    "id": rec.id,
-                    "test_id": rec.test_id,
-                    "date": rec.test_date.strftime('%d.%m.%Y'),
-                    "patient": f"{rec.last_name} {rec.first_name}",
+                    "id": record.id,
+                    "test_id": record.test_id,
+                    "date": record.test_date.strftime('%d.%m.%Y'),
+                    "patient": f"{record.last_name} {record.first_name}",
                     "problem": problem
                 })
 
         processed += len(batch)
         offset += batch_size
 
-        # Логируем прогресс
         if processed % 5000 == 0:
-            logger.info(f"Проверено {processed} / {total_count}...")
+            logger.info(f"Проверено {processed} / {completed_count}...")
 
     duration = time.time() - start_time
+    status = "OK" if not suspicious_records else "FAIL"
 
-    # 4. Формируем итог и логируем его здесь же
-    if not suspicious_records:
-        msg = f"✅ АУДИТ ЗАВЕРШЕН. База идеально чиста. Проверено {processed} записей за {duration:.2f} сек."
-        logger.info(msg)
-        return {"status": "OK", "message": msg}
-
-    # Если есть проблемы
-    msg = (
-        f"⚠️ АУДИТ ЗАВЕРШЕН С ОШИБКАМИ. "
-        f"Найдено битых записей: {len(suspicious_records)}. "
-        f"Время: {duration:.2f} сек."
-    )
-    logger.warning(msg)
+    logger.info(f"Аудит завершен. Статус: {status}. Пустой результат: {empty_count}. Ошибок: {len(suspicious_records)}")
 
     return {
-        "status": "FAIL",
-        "message": msg,
-        "total_checked": processed,
-        "bad_records_count": len(suspicious_records),
-        "bad_records_sample": suspicious_records[:100]  # Возвращаем только первые 100, чтобы не забить канал
+        "status": status,
+        "duration": round(duration, 2),
+        "total_checked": processed,  # Проверено (готовых)
+        "empty_count": empty_count,  # is_result=False
+        "bad_count": len(suspicious_records),  # Битая целостность
+        "problems": suspicious_records[:10]  # Примеры ошибок
     }
+
