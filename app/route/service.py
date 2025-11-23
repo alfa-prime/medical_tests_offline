@@ -18,25 +18,6 @@ router = APIRouter(prefix="/service", tags=["Service functions"], dependencies=[
 
 
 @router.post(
-    "/audit-full-db-background",
-    summary="Запуск аудита в фоне",
-    description="Запускает процесс аудита в фоне. Ответ приходит мгновенно. Результаты ищи в логах (make logs).",
-)
-@route_handle
-async def audit_full_database_background(
-        background_tasks: BackgroundTasks,
-        session: Annotated[AsyncSession, Depends(get_session)],
-        batch_size: int = 1000
-):
-    background_tasks.add_task(full_audit_dbase, session, batch_size)
-
-    return {
-        "status": "ACCEPTED",
-        "message": "Аудит запущен в фоновом режиме. Следите за логами контейнера."
-    }
-
-
-@router.post(
     "/by_day",
     summary="Собрать данные о результатах исследований за ОДИН день",
     description="Отправляет запрос на API-шлюз с указанием даты дня, ответ обрабатывается и сохраняется в БД.",
@@ -68,6 +49,25 @@ async def get_data_for_month(
     month = request_data.month
     prefixes = request_data.prefixes
     return await collect_by_month(year, month, gateway_service, session, prefixes)
+
+
+@router.post(
+    "/audit-full-db-background",
+    summary="Запуск аудита в фоне",
+    description="Запускает процесс аудита базы данных в фоне. Прогресс и результат в логах (make logs-prod [prod] or make logs [dev])",
+)
+@route_handle
+async def audit_full_database_background(
+        background_tasks: BackgroundTasks,
+        session: Annotated[AsyncSession, Depends(get_session)],
+        batch_size: int = 1000
+):
+    background_tasks.add_task(full_audit_dbase, session, batch_size)
+
+    return {
+        "status": "ACCEPTED",
+        "message": "Аудит запущен в фоновом режиме. Следите за логами контейнера."
+    }
 
 
 @router.post(
