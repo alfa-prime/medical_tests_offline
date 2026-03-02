@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, model_validator, field_validator
-from typing import Dict, Any, Optional
 import datetime
+from typing import Dict, Any, Optional
+
+from pydantic import BaseModel, Field, model_validator, field_validator
 
 
 class RequestParams(BaseModel):
@@ -70,9 +71,15 @@ class RequestByPatient(BaseModel):
     middle_name: str | None = Field(default=None, description="Отчество (необязательно)", examples=["Олеговна"])
     birthday: str = Field(..., description="Дата рождения в формате ДД.ММ.ГГГГ", examples=["15.03.1967"])
 
-    @field_validator('birthday') # noqa
-    @staticmethod
-    def validate_birthday_format(v: str) -> str:
+
+    @field_validator("last_name", "first_name", "middle_name")
+    def sanitize_names(cls, v: Any) -> str: # noqa
+        if isinstance(v, str) and v.strip():
+            return v.strip().capitalize()
+        return ""
+
+    @field_validator('birthday')  # noqa
+    def validate_birthday_format(cls, v: str) -> str: # noqa
         try:
             datetime.datetime.strptime(v, '%d.%m.%Y')
         except ValueError:
